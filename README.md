@@ -45,8 +45,8 @@ contexte ») : il quantifie la dépendance au contexte au lieu de la supposer.
 ## Installation
 
 ```
-pip install pandas scikit-learn
-# optionnel, pour l'interprétabilité fine : pip install shap pyarrow
+py -3.12 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
 ```
 
 ## Les vraies données
@@ -56,26 +56,35 @@ Télécharger OULAD (licence **CC-BY 4.0**) sur votre machine :
 
 Décompresser les **7 CSV** (`studentInfo.csv`, `studentRegistration.csv`,
 `studentVle.csv`, `studentAssessment.csv`, `assessments.csv`, `vle.csv`,
-`courses.csv`) dans un dossier, par exemple `./OULAD`.
+`courses.csv`) dans `data/OULAD/` (ignoré par git).
 
 **Citation obligatoire :** Kuzilek, J., Hlosta, M., Zdrahal, Z. (2017).
 *Open University Learning Analytics dataset.* Scientific Data 4, 170171.
 
 ## Exécution
 
-```
-# 1) test du code sur données synthétiques
-python make_synthetic_oulad.py
-python 01_build_features.py --data ./data_synthetique --out features.csv
-python 02_train_evaluate.py --features features.csv
+Depuis la racine du dépôt, avec le venv activé :
 
-# 2) sur les vraies données, fenêtre précoce à 25 %
-python 01_build_features.py --data ./OULAD --out features_oulad.csv --cutoff 0.25
-python 02_train_evaluate.py --features features_oulad.csv --model rf
+```
+# 0) garde-fou anti-fuite (données synthétiques)
+python -m pytest tests
+
+# 1) une configuration : fenêtre précoce à 25 %, population active au cutoff
+python src/01_build_features.py --data data/OULAD --cache data/cache --out results/features_c25.parquet
+python src/02_train_evaluate.py --features results/features_c25.parquet --model rf
+
+# 2) T2 : courbe précocité vs performance (5 cutoffs × 2 populations, ~8 min)
+python src/03_early_curve.py --data data/OULAD
+python src/fig_early_curve.py
 ```
 
-Faire varier `--cutoff` (0.10, 0.25, 0.50) donne la courbe « précocité vs
-performance », un résultat central de l'article.
+`--population all` reproduit le protocole initial (étudiants déjà désinscrits
+au cutoff conservés) ; il redonne les chiffres de `results/reference_rf_c25.txt`
+aux notes près (les remises postérieures au cutoff sont désormais exclues).
+
+Code : `src/oulad_features.py` (variables, spécifique OULAD) et
+`src/transfer_eval.py` (protocoles génériques, colonne de contexte en paramètre,
+réutilisables sur UN-CHK).
 
 ## Pistes pour compléter avant soumission
 - Ajouter des variables **séquentielles** (clics par semaine, tendance) et

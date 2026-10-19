@@ -50,15 +50,17 @@ def scores(y, p, seuil=0.5) -> dict:
 
 
 def eval_aleatoire(df, features, target, group_col, kind="rf",
-                   n_splits=5, seed=SEED) -> pd.DataFrame:
-    """(A) Une ligne de métriques par pli."""
+                   n_splits=5, seed=SEED, return_oof=False):
+    """(A) Une ligne de métriques par pli ; avec return_oof, renvoie aussi les
+    probabilités hors-pli (pour ventiler les scores par contexte)."""
     X, y = df[features], df[target].values
     sgkf = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-    res = []
+    res, oof = [], np.full(len(df), np.nan)
     for tr, te in sgkf.split(X, y, df[group_col].values):
         m = construire_modele(X, kind, seed).fit(X.iloc[tr], y[tr])
-        res.append(scores(y[te], m.predict_proba(X.iloc[te])[:, 1]))
-    return pd.DataFrame(res)
+        oof[te] = m.predict_proba(X.iloc[te])[:, 1]
+        res.append(scores(y[te], oof[te]))
+    return (pd.DataFrame(res), oof) if return_oof else pd.DataFrame(res)
 
 
 def eval_contexte_exclu(df, features, target, context_col, kind="rf",
