@@ -1,0 +1,41 @@
+Données : 32593 lignes, cible à 52.8%.
+
+=== (A) Découpage aléatoire groupé par étudiant ===
+AUC          0.882
+Rappel       0.748
+Précision    0.857
+F1           0.799 
+
+=== (B) Leave-one-module-out (généralisation à un module non vu) ===
+       AUC  Rappel  Précision     F1
+AAA  0.782   0.682      0.503  0.579
+BBB  0.849   0.828      0.721  0.770
+CCC  0.905   0.789      0.906  0.844
+DDD  0.888   0.729      0.897  0.804
+EEE  0.884   0.796      0.780  0.788
+FFF  0.880   0.702      0.892  0.786
+GGG  0.750   0.985      0.419  0.588
+
+Moyenne LOMO :
+AUC          0.848
+Rappel       0.787
+Précision    0.731
+F1           0.737
+
+>> Écart d'AUC (aléatoire - LOMO) : +0.033
+   C'est la perte de performance quand le module (contexte) change.
+   Un écart important justifie l'apport de l'article sur la transférabilité.
+
+=== Importance des variables (permutation, AUC) ===
+mean_early_score     0.0737
+last_activity        0.0531
+highest_education    0.0111
+active_days          0.0048
+studied_credits      0.0046
+gender               0.0040
+n_submissions        0.0029
+first_activity       0.0012
+total_clicks         0.0010
+imd_band             0.0009
+distinct_sites       0.0009
+region               0.0007
