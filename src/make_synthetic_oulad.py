@@ -8,14 +8,18 @@ chaîne d'analyse sans les vraies données. À REMPLACER par le vrai OULAD
 
 Ne JAMAIS utiliser ces données synthétiques pour un résultat de recherche :
 elles ne servent qu'à vérifier que le code tourne.
+
+Usage : python src/make_synthetic_oulad.py [dossier_sortie]   (défaut : data/synthetique)
 """
+import sys
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 rng = np.random.default_rng(42)
-OUT = Path(__file__).parent / "data_synthetique"
-OUT.mkdir(exist_ok=True)
+OUT = (Path(sys.argv[1]) if len(sys.argv) > 1
+       else Path(__file__).resolve().parent.parent / "data" / "synthetique")
+OUT.mkdir(parents=True, exist_ok=True)
 
 modules = ["AAA", "BBB", "CCC", "DDD"]
 pres = ["2013J", "2014J"]
