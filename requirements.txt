@@ -1,0 +1,11 @@
+# Python 3.12 — versions figées pour la reproductibilité
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+matplotlib==3.11.2
+pyarrow==26.0.0
+# optionnels (T4 SHAP, T5 boosting)
+shap==0.54.1
+xgboost==3.4.1
+# tests
+pytest

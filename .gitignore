@@ -1,0 +1,30 @@
+# Données (OULAD, CC-BY 4.0 : à télécharger, ne pas versionner)
+data/
+data_synthetique/
+
+# Sorties volumineuses / régénérables
+*.parquet
+results/*.csv
+!results/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# LaTeX
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+paper/*.fdb_latexmk
+paper/*.fls
+
+# Éditeurs / OS
+.vscode/
+Thumbs.db
+.DS_Store
