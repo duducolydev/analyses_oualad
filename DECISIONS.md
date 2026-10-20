@@ -84,3 +84,31 @@ exception : GGG 0,79 → 0,70) et annulent la décomposition (GGG +0,30 → −0
 Méthode : SHAP exact (TreeSHAP) estimé sur 100 arbres tirés parmi 300 (moyenne
 de forêt ⇒ estimateur sans biais ; ρ = 0,985 avec l'exact), 400 étudiants par
 module ; modèle local en validation croisée à 2 plis groupés par étudiant.
+
+## D9 — Cible : Withdrawn + Fail, Withdrawn seul en robustesse (20/10/2026)
+
+Cible principale conservée : `at_risk` = Withdrawn ou Fail. Raisons :
+(1) dans un dispositif d'accompagnement, les deux issues appellent la même
+intervention précoce ; (2) en population active, « Withdrawn seul » devient
+« abandon futur », cible rare (13,7 % à 25 %) et bien plus difficile (AUC
+intra-module ≈ 0,65–0,70), où les métriques au seuil 0,5 dégénèrent (rappel
+0,10–0,13) ; (3) comparabilité avec la littérature OULAD. Robustesse (cutoff
+25 %) : avec Withdrawn seul, les constats tiennent — coût de transfert de l'AUC
+0,021 (absolues) → 0,006 (relatives), |dérive| 0,052 → 0,028 (GGG +0,18 →
++0,03), AUC LOMO 0,630 → 0,668. Pour cette cible, comparer sur l'AUC, pas au
+seuil.
+
+## D10 — Équité : la dérive de contexte devient un biais de groupe (20/10/2026)
+
+Métriques au seuil par genre, quintile d'IMD et handicap ; IC 95 % par
+bootstrap groupé par étudiant (1000 tirages, apparié entre configurations).
+Genre : en variables absolues, le transfert fait passer l'écart de FPR
+femmes − hommes de −0,007 [−0,019 ; 0,005] (A) à +0,188 [0,174 ; 0,201] (B).
+À l'intérieur de chaque module, l'écart est ≤ 0 ou proche de 0 : l'écart global
+est un effet de composition (femmes = 88 % de BBB et 81 % de GGG, les deux
+modules qui dérivent vers le haut). Variables relatives : +0,016 [0,004 ; 0,027].
+Conséquence méthodologique : auditer l'équité aussi à l'intérieur des contextes,
+sinon une dérive de calibration se lit comme une discrimination (et inversement).
+IMD Q1 − Q5 et handicap : écarts présents dans toutes les configurations
+(risque de base plus élevé en Q1 : 51 % contre 33 %), FPR Q1 − Q5 de +0,11 à
++0,16 ; les variables relatives le réduisent en LOMO (−0,05 [−0,075 ; −0,026]).

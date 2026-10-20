@@ -7,7 +7,10 @@ des données disponibles au jour `cutoff_day` = round(cutoff × durée) :
   - variables démographiques (studentInfo)
   - engagement VLE jusqu'au cutoff (studentVle, date <= cutoff_day)
   - évaluations dont l'échéance ET la remise sont <= cutoff_day
-  - cible : at_risk = 1 si final_result in {Withdrawn, Fail}, sinon 0
+  - cible (paramètre `cible`) :
+      "withdrawn_fail" (défaut) : at_risk = 1 si final_result in {Withdrawn, Fail}
+      "withdrawn"               : at_risk = 1 si final_result == Withdrawn
+                                  (abandon postérieur au cutoff en population active)
 
 Variables relatives (paramètre `relatives`) : les variables d'engagement et de
 notes sont remplacées par leur rang centile au sein de la présentation (parmi
@@ -29,6 +32,7 @@ CLE = ["code_module", "code_presentation"]
 TABLES = ["studentInfo", "studentRegistration", "studentVle",
           "studentAssessment", "assessments", "courses", "vle"]
 POPULATIONS = ("active", "all")
+CIBLES = {"withdrawn_fail": ["Withdrawn", "Fail"], "withdrawn": ["Withdrawn"]}
 VARIABLES_CONTEXTUELLES = ["total_clicks", "active_days", "distinct_sites",
                            "first_activity", "last_activity", "clicks_per_active_day",
                            "n_submissions", "mean_early_score"]
@@ -52,9 +56,12 @@ def charger(data: Path, cache: Path | None = None) -> dict[str, pd.DataFrame]:
 
 
 def construire(tables: dict[str, pd.DataFrame], cutoff: float,
-               population: str = "active", relatives: bool = False) -> pd.DataFrame:
+               population: str = "active", relatives: bool = False,
+               cible: str = "withdrawn_fail") -> pd.DataFrame:
     if population not in POPULATIONS:
         raise ValueError(f"population doit valoir {POPULATIONS}")
+    if cible not in CIBLES:
+        raise ValueError(f"cible doit valoir {tuple(CIBLES)}")
     info, reg, vle = tables["studentInfo"], tables["studentRegistration"], tables["studentVle"]
     sa, assess, courses = tables["studentAssessment"], tables["assessments"], tables["courses"]
 
@@ -116,5 +123,5 @@ def construire(tables: dict[str, pd.DataFrame], cutoff: float,
                                        .rank(pct=True, method="average"))
 
     # --- Cible --- (final_result n'est jamais conservé comme prédicteur)
-    df["at_risk"] = df["final_result"].isin(["Withdrawn", "Fail"]).astype(int)
+    df["at_risk"] = df["final_result"].isin(CIBLES[cible]).astype(int)
     return df.drop(columns="final_result").reset_index(drop=True)

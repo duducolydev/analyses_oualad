@@ -88,6 +88,14 @@ python src/05_shap_by_module.py --data data/OULAD --variables relatives
 python src/05_shap_by_module.py --data data/OULAD --variables absolues
 python src/06_shap_stability.py
 python src/fig_shap.py
+
+# 5) T6 : équité (prédictions déjà enregistrées) et cible « Withdrawn seul »
+python src/07_fairness.py --cutoff 0.25
+python src/fig_fairness.py
+python src/03_early_curve.py --data data/OULAD --variables relatives --cible withdrawn --populations active
+python src/03_early_curve.py --data data/OULAD --variables absolues --cible withdrawn --populations active
+python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables relatives --cible withdrawn
+python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables absolues --cible withdrawn
 ```
 
 `--population all` reproduit le protocole initial (étudiants déjà désinscrits

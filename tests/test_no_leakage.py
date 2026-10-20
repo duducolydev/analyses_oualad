@@ -79,6 +79,16 @@ def test_population_active_exclut_les_partis(tables, cutoff):
     assert len(partis) > 0  # le test a bien quelque chose à exclure
 
 
+@pytest.mark.parametrize("cible,positifs", [("withdrawn_fail", {"Withdrawn", "Fail"}),
+                                            ("withdrawn", {"Withdrawn"})])
+def test_cible(tables, cible, positifs):
+    df = construire(tables, 0.25, cible=cible).merge(
+        tables["studentInfo"][CLE + ["id_student", "final_result"]], on=CLE + ["id_student"])
+    assert (df["at_risk"] == df["final_result"].isin(positifs)).all()
+    variables = construire(tables, 0.25).drop(columns="at_risk")
+    pd.testing.assert_frame_equal(variables, construire(tables, 0.25, cible=cible).drop(columns="at_risk"))
+
+
 def test_pas_de_resultat_final_parmi_les_variables(tables):
     df = construire(tables, 0.25)
     assert "final_result" not in df.columns

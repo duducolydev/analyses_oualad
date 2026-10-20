@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 
-from oulad_features import POPULATIONS, charger, construire
+from oulad_features import CIBLES, POPULATIONS, charger, construire
 from transfer_eval import SEED, eval_aleatoire, eval_contexte_exclu, scores
 
 warnings.filterwarnings("ignore")
@@ -70,12 +70,13 @@ def main():
     ap.add_argument("--model", choices=["rf", "logit"], default="rf")
     ap.add_argument("--variables", choices=["absolues", "relatives"], default="absolues",
                     help="relatives = engagement et notes en rang centile dans la présentation.")
+    ap.add_argument("--cible", choices=list(CIBLES), default="withdrawn_fail")
     ap.add_argument("--out", type=Path, default=Path("results"))
     args = ap.parse_args()
     args.out.mkdir(exist_ok=True)
     relatives = args.variables == "relatives"
-    tag = args.model + ("_rel" if relatives else "")
-    suffixe = "_relatives" if relatives else ""
+    tag = args.model + ("_rel" if relatives else "") + ("_wd" if args.cible == "withdrawn" else "")
+    suffixe = ("_relatives" if relatives else "") + ("_withdrawn" if args.cible == "withdrawn" else "")
 
     (args.out / "versions.txt").write_text(
         f"python {platform.python_version()}\nnumpy {np.__version__}\n"
@@ -87,13 +88,13 @@ def main():
     for pop in args.populations:
         for cut in args.cutoffs:
             t = time.time()
-            df = construire(tables, cut, pop, relatives)
+            df = construire(tables, cut, pop, relatives, args.cible)
             lignes, par_module, preds = une_config(df, args.model)
             (args.out / "preds").mkdir(exist_ok=True)
             preds.to_parquet(args.out / "preds" / f"preds_{tag}_{pop}_c{round(cut*100):02d}.parquet",
                              index=False)
             meta = {"cutoff": cut, "population": pop, "modele": args.model,
-                    "variables": args.variables}
+                    "variables": args.variables, "cible": args.cible}
             agr += [{**meta, **l} for l in lignes]
             mod += [{**meta, **l} for l in par_module]
             a, b = lignes

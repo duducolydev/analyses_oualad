@@ -31,7 +31,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-from oulad_features import CLE, charger, construire
+from oulad_features import CIBLES, CLE, charger, construire
 from oulad_profiles import profils
 from transfer_eval import dissimilarite_contexte, recalibrer, scores
 
@@ -133,14 +133,17 @@ def main():
     ap.add_argument("--population", default="active")
     ap.add_argument("--model", default="rf")
     ap.add_argument("--variables", choices=["absolues", "relatives"], default="absolues")
+    ap.add_argument("--cible", choices=list(CIBLES), default="withdrawn_fail")
     ap.add_argument("--out", type=Path, default=Path("results"))
     args = ap.parse_args()
     relatives = args.variables == "relatives"
-    tag = args.model + ("_rel" if relatives else "")
+    wd = args.cible == "withdrawn"
+    tag = args.model + ("_rel" if relatives else "") + ("_wd" if wd else "")
 
     tables = charger(args.data, args.cache)
-    feats = construire(tables, args.cutoff, args.population)  # descripteurs : valeurs absolues
-    feats_modele = construire(tables, args.cutoff, args.population, relatives)
+    # descripteurs : valeurs absolues
+    feats = construire(tables, args.cutoff, args.population, cible=args.cible)
+    feats_modele = construire(tables, args.cutoff, args.population, relatives, args.cible)
     fichier = args.out / "preds" / f"preds_{tag}_{args.population}_c{round(args.cutoff*100):02d}.parquet"
     preds = pd.read_parquet(fichier)
     assert len(preds) == len(feats) and (preds[ID_COLS].values == feats[ID_COLS].values).all(), \
@@ -172,7 +175,8 @@ def main():
     rk = recalibration_k(preds)
     rt = recalibration_temporelle(preds)
 
-    meta = f"_c{round(args.cutoff*100):02d}_{args.population}" + ("_relatives" if relatives else "")
+    meta = (f"_c{round(args.cutoff*100):02d}_{args.population}"
+            + ("_relatives" if relatives else "") + ("_withdrawn" if wd else ""))
     t_mod.to_csv(args.out / f"transfer_by_module{meta}.csv", index_label="module")
     t_pres.to_csv(args.out / f"transfer_by_presentation{meta}.csv")
     corr.to_csv(args.out / f"transfer_correlations{meta}.csv", index=False)

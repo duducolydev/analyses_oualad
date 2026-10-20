@@ -1,0 +1,74 @@
+          n  taux_risque  ...  precision_aleatoire  precision_lomo
+AAA   698.0        0.109  ...                0.229           0.258
+BBB  6202.0        0.111  ...                0.254           0.217
+CCC  3191.0        0.229  ...                0.500           0.485
+DDD  4984.0        0.194  ...                0.396           0.421
+EEE  2470.0        0.105  ...                0.316           0.442
+FFF  6289.0        0.149  ...                0.405           0.330
+GGG  2398.0        0.065  ...                0.143           0.133
+
+[7 rows x 9 columns]
+
+Descripteurs par module :
+              n_eval_avant_cutoff  ...  ecart_structure_eval
+code_module                       ...                      
+AAA                        2.000  ...                 0.993
+BBB                        2.750  ...                 1.588
+CCC                        2.500  ...                 1.222
+DDD                        2.750  ...                 1.400
+EEE                        1.000  ...                 1.632
+FFF                        2.000  ...                 0.795
+GGG                        0.667  ...                 4.281
+
+[7 rows x 13 columns]
+
+Corrélations de Spearman p < 0,05 (q = Benjamini-Hochberg par niveau) :
+       niveau  n_contextes      descripteur                axe  spearman_rho  p_valeur  q_valeur_BH
+      module            7      part_plus35      auc_aleatoire        -0.893     0.007        0.245
+      module            7 n_types_activite      auc_aleatoire         0.775     0.041        0.489
+      module            7 part_sans_alevel derive_signalement         0.786     0.036        0.489
+presentation           22      part_plus35      auc_aleatoire        -0.495     0.019        0.210
+presentation           22 part_sans_alevel derive_signalement         0.756     0.000        0.002
+presentation           22      taux_risque derive_signalement        -0.612     0.002        0.041
+
+Recalibration temporelle :
+ module presentation_calibration  n_calibration  n_test        methode  rappel  precision    f1  signalement
+   AAA                    2013J            360     338      aleatoire   0.128      0.294 0.179        0.050
+   AAA                    2013J            360     338      lomo_brut   0.077      0.176 0.107        0.050
+   AAA                    2013J            360     338 lomo_recalibre   0.590      0.151 0.241        0.450
+   BBB                    2013B           1453    4749      aleatoire   0.083      0.233 0.122        0.037
+   BBB                    2013B           1453    4749      lomo_brut   0.156      0.201 0.175        0.081
+   BBB                    2013B           1453    4749 lomo_recalibre   0.518      0.164 0.249        0.328
+   CCC                    2014B           1351    1840      aleatoire   0.215      0.545 0.308        0.090
+   CCC                    2014B           1351    1840      lomo_brut   0.045      0.528 0.084        0.020
+   CCC                    2014B           1351    1840 lomo_recalibre   0.609      0.335 0.432        0.414
+   DDD                    2013B           1074    3910      aleatoire   0.156      0.415 0.226        0.073
+   DDD                    2013B           1074    3910      lomo_brut   0.086      0.452 0.145        0.037
+   DDD                    2013B           1074    3910 lomo_recalibre   0.563      0.339 0.423        0.325
+   EEE                    2013J            896    1574      aleatoire   0.076      0.333 0.123        0.025
+   EEE                    2013J            896    1574      lomo_brut   0.064      0.458 0.112        0.015
+   EEE                    2013J            896    1574 lomo_recalibre   0.703      0.203 0.316        0.378
+   FFF                    2013B           1393    4896      aleatoire   0.141      0.423 0.212        0.051
+   FFF                    2013B           1393    4896      lomo_brut   0.130      0.362 0.192        0.055
+   FFF                    2013B           1393    4896 lomo_recalibre   0.672      0.230 0.343        0.444
+   GGG                    2013J            919    1479      aleatoire   0.024      0.136 0.041        0.015
+   GGG                    2013J            919    1479      lomo_brut   0.073      0.231 0.111        0.026
+   GGG                    2013J            919    1479 lomo_recalibre   0.626      0.149 0.241        0.350
+
+Recalibration k (moyenne sur les modules) :
+                     rappel  precision     f1  signalement
+k   methode                                              
+25  aleatoire        0.110      0.320  0.162        0.048
+    lomo_brut        0.103      0.327  0.145        0.046
+    lomo_recalibre   0.544      0.195  0.278        0.394
+50  aleatoire        0.110      0.320  0.162        0.048
+    lomo_brut        0.103      0.327  0.145        0.046
+    lomo_recalibre   0.580      0.198  0.288        0.410
+100 aleatoire        0.110      0.319  0.162        0.048
+    lomo_brut        0.103      0.326  0.145        0.046
+    lomo_recalibre   0.623      0.206  0.303        0.417
+200 aleatoire        0.111      0.323  0.164        0.048
+    lomo_brut        0.103      0.328  0.146        0.046
+    lomo_recalibre   0.635      0.208  0.307        0.418
+
+Écrit dans results/ (suffixe _c25_active_relatives_withdrawn)

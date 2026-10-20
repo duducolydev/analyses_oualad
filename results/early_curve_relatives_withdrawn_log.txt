@@ -1,0 +1,6 @@
+[active cutoff 0.10] n=27741 risque=19.2% | AUC aléa 0.695  LOMO 0.627  écart +0.068 | rappel aléa 0.256  LOMO 0.165  (79s)
+[active cutoff 0.20] n=26683 risque=16.0% | AUC aléa 0.697  LOMO 0.655  écart +0.042 | rappel aléa 0.184  LOMO 0.153  (55s)
+[active cutoff 0.25] n=26232 risque=14.5% | AUC aléa 0.702  LOMO 0.668  écart +0.034 | rappel aléa 0.133  LOMO 0.103  (57s)
+[active cutoff 0.33] n=25740 risque=12.9% | AUC aléa 0.699  LOMO 0.666  écart +0.032 | rappel aléa 0.092  LOMO 0.075  (53s)
+[active cutoff 0.50] n=24599 risque=8.8% | AUC aléa 0.738  LOMO 0.705  écart +0.033 | rappel aléa 0.049  LOMO 0.038  (48s)
+Écrit : results/early_curve_relatives_withdrawn.csv, early_curve_by_module_relatives_withdrawn.csv
