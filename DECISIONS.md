@@ -54,3 +54,11 @@ non indépendantes : même modèle LOMO par module), q-valeurs de
 Benjamini-Hochberg par niveau. La dissimilarité estimée par classifieur
 (contexte vs reste) vaut 0,94–1,00 pour tous les modules : non informative,
 écartée de l'interprétation.
+
+## D7 — Variables relatives = modèle principal (validé le 20/10/2026)
+
+Pour la suite (T2 en figure, T4–T6), le modèle principal utilise les variables
+relatives ; le modèle à variables absolues (celui de la littérature) est gardé
+comme référence. Il est meilleur sur tous les axes en LOMO (AUC, précision, F1,
+dérive) et transforme le constat (« ce qui ne se transfère pas ») en remède
+utilisable sans étiquette sur une nouvelle formation UN-CHK.
