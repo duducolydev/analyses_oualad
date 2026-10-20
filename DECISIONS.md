@@ -46,6 +46,10 @@ transfèrent pas. Test : variante où engagement et notes sont remplacés par le
 rang centile dans la présentation (`--variables relatives`, sans étiquette,
 calculable au cutoff, couverte par le test anti-fuite). À 25 % : |dérive|
 moyenne 0,137 → 0,021 (GGG +0,51 → −0,01), AUC LOMO 0,787 → 0,809.
+Précision apportée par T4 (SHAP signé, D8) : à 25 %, le modèle transféré
+remonte le risque prédit de GGG de +0,30, dont +0,19 par les notes précoces
+(moitié des étudiants sans note, devoirs formatifs notés plus bas) et +0,13 par
+l'engagement VLE. Les deux relèvent du même problème d'échelle absolue.
 
 ## D6 — Statistiques des corrélations (20/10/2026)
 
@@ -62,3 +66,21 @@ relatives ; le modèle à variables absolues (celui de la littérature) est gard
 comme référence. Il est meilleur sur tous les axes en LOMO (AUC, précision, F1,
 dérive) et transforme le constat (« ce qui ne se transfère pas ») en remède
 utilisable sans étiquette sur une nouvelle formation UN-CHK.
+
+## D8 — T4 : mêmes variables, mauvais seuils (20/10/2026)
+
+Hypothèse du brief : « si les variables importantes changent d'un module à
+l'autre, c'est une preuve de non-transférabilité ». Résultat : les importances
+SHAP locales sont assez stables entre modules (Spearman moyen 0,81 entre paires,
+`mean_early_score` en tête partout). Le module qui dérive le plus (GGG) a la
+MEILLEURE concordance transféré/local en variables absolues (0,79) : sa dérive
+ne vient pas de variables différentes mais des mêmes variables lues avec des
+seuils absolus inadaptés. L'importance globale (|SHAP| moyen) ne le voit pas ;
+le SHAP signé moyen du modèle transféré, si (décomposition de la dérive,
+corrélé à la dérive de signalement : ρ = 0,68 sur 7 modules). Les variables
+relatives augmentent la concordance dans 6 modules sur 7 (moyenne 0,60 → 0,82 ;
+exception : GGG 0,79 → 0,70) et annulent la décomposition (GGG +0,30 → −0,04).
+
+Méthode : SHAP exact (TreeSHAP) estimé sur 100 arbres tirés parmi 300 (moyenne
+de forêt ⇒ estimateur sans biais ; ρ = 0,985 avec l'exact), 400 étudiants par
+module ; modèle local en validation croisée à 2 plis groupés par étudiant.

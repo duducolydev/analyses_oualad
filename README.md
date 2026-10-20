@@ -82,6 +82,12 @@ python src/03_early_curve.py --data data/OULAD --variables relatives --populatio
 python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25
 python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables relatives
 python src/fig_transfer.py
+
+# 4) T4 : SHAP par module (~16 et ~25 min, 3 modules en parallèle, ~2 Go de RAM chacun)
+python src/05_shap_by_module.py --data data/OULAD --variables relatives
+python src/05_shap_by_module.py --data data/OULAD --variables absolues
+python src/06_shap_stability.py
+python src/fig_shap.py
 ```
 
 `--population all` reproduit le protocole initial (étudiants déjà désinscrits
