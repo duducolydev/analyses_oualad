@@ -7,13 +7,16 @@ Pour chaque cutoff et chaque population (active / all), construit les variables
 puis évalue (A) aléatoire groupé par étudiant et (B) leave-one-module-out.
 
 Sorties :
-  results/early_curve.csv            une ligne par (cutoff, population, protocole)
-  results/early_curve_by_module.csv  une ligne par (cutoff, population, protocole, module)
+  results/early_curve[_relatives].csv            une ligne par (cutoff, population, protocole)
+  results/early_curve_by_module[_relatives].csv  une ligne par (cutoff, population, protocole, module)
+  results/preds/preds_<modèle>_<population>_c<cutoff>.parquet
+                                     prédictions par ligne : p_aleatoire (hors-pli), p_lomo
   results/versions.txt               versions des librairies
 
 Usage :
     python src/03_early_curve.py --data data/OULAD
     python src/03_early_curve.py --data data/OULAD --cutoffs 0.25 --populations active
+    python src/03_early_curve.py --data data/OULAD --variables relatives --populations active
 """
 import argparse
 import platform
@@ -37,8 +40,9 @@ METRIQUES = ["AUC", "Rappel", "Précision", "F1"]
 def une_config(df, kind):
     feats = [c for c in df.columns if c not in ID_COLS + [TARGET]]
     a_plis, oof = eval_aleatoire(df, feats, TARGET, "id_student", kind, return_oof=True)
-    b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind)
+    b, pred_b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind, return_pred=True)
     b[METRIQUES] = b[METRIQUES].astype(float)
+    preds = df[ID_COLS + [TARGET]].assign(p_aleatoire=oof, p_lomo=pred_b)
 
     lignes = [
         {"protocole": "aleatoire", "n": len(df), "taux_risque": df[TARGET].mean(),
@@ -54,7 +58,7 @@ def une_config(df, kind):
     for mod, r in b.iterrows():
         par_module.append({"protocole": "lomo", "module": mod, "n": int(r["n"]),
                            "taux_risque": r["taux_risque"], **r[METRIQUES].to_dict()})
-    return lignes, par_module
+    return lignes, par_module, preds
 
 
 def main():
@@ -64,9 +68,14 @@ def main():
     ap.add_argument("--cutoffs", type=float, nargs="+", default=[0.10, 0.20, 0.25, 0.33, 0.50])
     ap.add_argument("--populations", nargs="+", choices=POPULATIONS, default=list(POPULATIONS))
     ap.add_argument("--model", choices=["rf", "logit"], default="rf")
+    ap.add_argument("--variables", choices=["absolues", "relatives"], default="absolues",
+                    help="relatives = engagement et notes en rang centile dans la présentation.")
     ap.add_argument("--out", type=Path, default=Path("results"))
     args = ap.parse_args()
     args.out.mkdir(exist_ok=True)
+    relatives = args.variables == "relatives"
+    tag = args.model + ("_rel" if relatives else "")
+    suffixe = "_relatives" if relatives else ""
 
     (args.out / "versions.txt").write_text(
         f"python {platform.python_version()}\nnumpy {np.__version__}\n"
@@ -78,9 +87,13 @@ def main():
     for pop in args.populations:
         for cut in args.cutoffs:
             t = time.time()
-            df = construire(tables, cut, pop)
-            lignes, par_module = une_config(df, args.model)
-            meta = {"cutoff": cut, "population": pop, "modele": args.model}
+            df = construire(tables, cut, pop, relatives)
+            lignes, par_module, preds = une_config(df, args.model)
+            (args.out / "preds").mkdir(exist_ok=True)
+            preds.to_parquet(args.out / "preds" / f"preds_{tag}_{pop}_c{round(cut*100):02d}.parquet",
+                             index=False)
+            meta = {"cutoff": cut, "population": pop, "modele": args.model,
+                    "variables": args.variables}
             agr += [{**meta, **l} for l in lignes]
             mod += [{**meta, **l} for l in par_module]
             a, b = lignes
@@ -89,9 +102,9 @@ def main():
                   f"rappel aléa {a['Rappel']:.3f}  LOMO {b['Rappel']:.3f}  ({time.time()-t:.0f}s)",
                   flush=True)
 
-    pd.DataFrame(agr).to_csv(args.out / "early_curve.csv", index=False)
-    pd.DataFrame(mod).to_csv(args.out / "early_curve_by_module.csv", index=False)
-    print(f"Écrit : {args.out / 'early_curve.csv'}, {args.out / 'early_curve_by_module.csv'}")
+    pd.DataFrame(agr).to_csv(args.out / f"early_curve{suffixe}.csv", index=False)
+    pd.DataFrame(mod).to_csv(args.out / f"early_curve_by_module{suffixe}.csv", index=False)
+    print(f"Écrit : {args.out}/early_curve{suffixe}.csv, early_curve_by_module{suffixe}.csv")
 
 
 if __name__ == "__main__":

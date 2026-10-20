@@ -1,0 +1,84 @@
+          n  taux_risque  ...  precision_aleatoire  precision_lomo
+AAA   698.0        0.239  ...                0.406           0.378
+BBB  6202.0        0.395  ...                0.669           0.540
+CCC  3191.0        0.474  ...                0.768           0.781
+DDD  4984.0        0.477  ...                0.768           0.794
+EEE  2470.0        0.332  ...                0.769           0.689
+FFF  6289.0        0.420  ...                0.751           0.757
+GGG  2398.0        0.369  ...                0.549           0.383
+
+[7 rows x 9 columns]
+
+Descripteurs par module :
+              n_eval_avant_cutoff  ...  ecart_structure_eval
+code_module                       ...                      
+AAA                        2.000  ...                 0.993
+BBB                        2.750  ...                 1.588
+CCC                        2.500  ...                 1.222
+DDD                        2.750  ...                 1.400
+EEE                        1.000  ...                 1.632
+FFF                        2.000  ...                 0.795
+GGG                        0.667  ...                 4.281
+
+[7 rows x 13 columns]
+
+Corrélations de Spearman p < 0,05 (q = Benjamini-Hochberg par niveau) :
+       niveau  n_contextes                 descripteur                axe  spearman_rho  p_valeur  q_valeur_BH
+      module            7                 part_plus35      auc_aleatoire        -0.964     0.000        0.016
+      module            7       dissimilarite_domaine derive_signalement         0.857     0.014        0.247
+presentation           22                 part_plus35      auc_aleatoire        -0.787     0.000        0.000
+presentation           22            n_types_activite      auc_aleatoire         0.544     0.009        0.037
+presentation           22                 taux_risque      auc_aleatoire         0.492     0.020        0.060
+presentation           22           premiere_echeance cout_transfert_auc        -0.548     0.008        0.037
+presentation           22           part_note_precoce cout_transfert_auc         0.522     0.013        0.042
+presentation           22         n_eval_avant_cutoff cout_transfert_auc         0.461     0.031        0.078
+presentation           22 part_withdrawn_parmi_risque derive_signalement        -0.709     0.000        0.004
+presentation           22                 part_plus35 derive_signalement         0.619     0.002        0.023
+presentation           22                 taux_risque derive_signalement        -0.606     0.003        0.023
+presentation           22            part_sans_alevel derive_signalement         0.582     0.004        0.029
+presentation           22               clics_medians derive_signalement        -0.573     0.005        0.029
+presentation           22        ecart_structure_eval derive_signalement         0.529     0.011        0.042
+presentation           22            n_types_activite derive_signalement        -0.482     0.023        0.063
+presentation           22         n_eval_avant_cutoff derive_signalement        -0.452     0.035        0.082
+
+Recalibration temporelle :
+ module presentation_calibration  n_calibration  n_test        methode  rappel  precision    f1  signalement
+   AAA                    2013J            360     338      aleatoire   0.647      0.399 0.493        0.408
+   AAA                    2013J            360     338      lomo_brut   0.729      0.376 0.496        0.488
+   AAA                    2013J            360     338 lomo_recalibre   0.753      0.376 0.502        0.503
+   BBB                    2013B           1453    4749      aleatoire   0.626      0.640 0.633        0.370
+   BBB                    2013B           1453    4749      lomo_brut   0.774      0.505 0.611        0.580
+   BBB                    2013B           1453    4749 lomo_recalibre   0.724      0.528 0.611        0.518
+   CCC                    2014B           1351    1840      aleatoire   0.623      0.808 0.704        0.346
+   CCC                    2014B           1351    1840      lomo_brut   0.535      0.840 0.653        0.285
+   CCC                    2014B           1351    1840 lomo_recalibre   0.445      0.850 0.584        0.235
+   DDD                    2013B           1074    3910      aleatoire   0.701      0.757 0.728        0.429
+   DDD                    2013B           1074    3910      lomo_brut   0.641      0.777 0.703        0.382
+   DDD                    2013B           1074    3910 lomo_recalibre   0.735      0.726 0.730        0.469
+   EEE                    2013J            896    1574      aleatoire   0.621      0.763 0.685        0.276
+   EEE                    2013J            896    1574      lomo_brut   0.698      0.675 0.686        0.350
+   EEE                    2013J            896    1574 lomo_recalibre   0.754      0.620 0.681        0.412
+   FFF                    2013B           1393    4896      aleatoire   0.648      0.757 0.698        0.355
+   FFF                    2013B           1393    4896      lomo_brut   0.627      0.761 0.688        0.342
+   FFF                    2013B           1393    4896 lomo_recalibre   0.706      0.695 0.701        0.421
+   GGG                    2013J            919    1479      aleatoire   0.706      0.540 0.612        0.492
+   GGG                    2013J            919    1479      lomo_brut   0.989      0.389 0.559        0.957
+   GGG                    2013J            919    1479 lomo_recalibre   0.749      0.493 0.595        0.571
+
+Recalibration k (moyenne sur les modules) :
+                     rappel  precision     f1  signalement
+k   methode                                              
+25  aleatoire        0.650      0.668  0.653        0.380
+    lomo_brut        0.722      0.617  0.638        0.487
+    lomo_recalibre   0.676      0.619  0.638        0.428
+50  aleatoire        0.649      0.668  0.653        0.380
+    lomo_brut        0.722      0.617  0.638        0.488
+    lomo_recalibre   0.685      0.623  0.645        0.428
+100 aleatoire        0.650      0.669  0.653        0.380
+    lomo_brut        0.723      0.618  0.639        0.488
+    lomo_recalibre   0.685      0.624  0.647        0.426
+200 aleatoire        0.649      0.669  0.653        0.380
+    lomo_brut        0.722      0.617  0.638        0.487
+    lomo_recalibre   0.681      0.624  0.646        0.423
+
+Écrit dans results/ (suffixe _c25_active)

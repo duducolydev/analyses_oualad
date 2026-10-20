@@ -76,6 +76,12 @@ python src/02_train_evaluate.py --features results/features_c25.parquet --model 
 # 2) T2 : courbe précocité vs performance (5 cutoffs × 2 populations, ~8 min)
 python src/03_early_curve.py --data data/OULAD
 python src/fig_early_curve.py
+
+# 3) T3 : hétérogénéité du transfert (classement vs calibration, remèdes)
+python src/03_early_curve.py --data data/OULAD --variables relatives --populations active
+python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25
+python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables relatives
+python src/fig_transfer.py
 ```
 
 `--population all` reproduit le protocole initial (étudiants déjà désinscrits

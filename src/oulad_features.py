@@ -9,6 +9,12 @@ des données disponibles au jour `cutoff_day` = round(cutoff × durée) :
   - évaluations dont l'échéance ET la remise sont <= cutoff_day
   - cible : at_risk = 1 si final_result in {Withdrawn, Fail}, sinon 0
 
+Variables relatives (paramètre `relatives`) : les variables d'engagement et de
+notes sont remplacées par leur rang centile au sein de la présentation (parmi
+les étudiants de la population retenue, au même cutoff). Le volume d'activité
+« normal » dépend de la conception du module ; le rang, lui, est comparable
+d'un contexte à l'autre. Calculable au cutoff, sans aucune étiquette.
+
 Population (paramètre `population`) :
   - "active" (défaut) : étudiants inscrits au cutoff et pas encore désinscrits.
     Ceux qui sont déjà partis ne relèvent plus de la prévention, et leur
@@ -21,8 +27,11 @@ import pandas as pd
 
 CLE = ["code_module", "code_presentation"]
 TABLES = ["studentInfo", "studentRegistration", "studentVle",
-          "studentAssessment", "assessments", "courses"]
+          "studentAssessment", "assessments", "courses", "vle"]
 POPULATIONS = ("active", "all")
+VARIABLES_CONTEXTUELLES = ["total_clicks", "active_days", "distinct_sites",
+                           "first_activity", "last_activity", "clicks_per_active_day",
+                           "n_submissions", "mean_early_score"]
 
 
 def charger(data: Path, cache: Path | None = None) -> dict[str, pd.DataFrame]:
@@ -43,7 +52,7 @@ def charger(data: Path, cache: Path | None = None) -> dict[str, pd.DataFrame]:
 
 
 def construire(tables: dict[str, pd.DataFrame], cutoff: float,
-               population: str = "active") -> pd.DataFrame:
+               population: str = "active", relatives: bool = False) -> pd.DataFrame:
     if population not in POPULATIONS:
         raise ValueError(f"population doit valoir {POPULATIONS}")
     info, reg, vle = tables["studentInfo"], tables["studentRegistration"], tables["studentVle"]
@@ -101,6 +110,10 @@ def construire(tables: dict[str, pd.DataFrame], cutoff: float,
     df["mean_early_score"] = df["mean_early_score"].fillna(-1)  # -1 = non soumis
     df["first_activity"] = df["first_activity"].fillna(999)
     df["last_activity"] = df["last_activity"].fillna(-999)
+
+    if relatives:
+        df[VARIABLES_CONTEXTUELLES] = (df.groupby(CLE)[VARIABLES_CONTEXTUELLES]
+                                       .rank(pct=True, method="average"))
 
     # --- Cible --- (final_result n'est jamais conservé comme prédicteur)
     df["at_risk"] = df["final_result"].isin(["Withdrawn", "Fail"]).astype(int)
