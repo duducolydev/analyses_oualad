@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\caption{Methodological audit at the 25\% cut-off (random forest). Each row adds one correction to the previous one. AUC of protocol (A), random split grouped by student, and (B), leave-one-module-out (LOMO), mean over held-out modules.}
+\label{tab:audit}
+\begin{tabular}{@{}p{4.3cm}ccc@{}}
+\toprule
+Evaluation setting & AUC (A) & AUC (B) & Gap \\
+\midrule
+1) Reference protocol (all enrolments, pooled AUC in (A)) & 0.882 & 0.848 & 0.033 \\
+2) + early scores filtered on submission date & 0.880 & 0.849 & 0.031 \\
+3) + students still enrolled at the cut-off only & 0.815 & 0.787 & 0.027 \\
+4) + same aggregation in (A) and (B) & 0.800 & 0.787 & 0.013 \\
+5) + context-relative features & 0.816 & 0.809 & 0.008 \\
+\bottomrule
+\end{tabular}
+\end{table}

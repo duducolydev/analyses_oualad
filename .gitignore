@@ -28,3 +28,6 @@ paper/*.fls
 .vscode/
 Thumbs.db
 .DS_Store
+
+# Journal de compilation LaTeX
+paper/build.log

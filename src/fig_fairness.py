@@ -10,8 +10,8 @@ Figure T6 — Équité : écarts de taux d'erreur entre groupes (cutoff 25 %, po
        (B) LOMO : l'écart global des variables absolues est un effet de
        composition (femmes concentrées dans BBB et GGG, modules qui dérivent).
 
-Lit results/fairness_gaps_c25_active.csv et les prédictions ; écrit figures/fairness.pdf et .png.
-Usage : python src/fig_fairness.py
+Lit results/fairness_gaps_c25_active.csv et les prédictions ; écrit figures/[en/]fairness.pdf et .png.
+Usage : python src/fig_fairness.py [--lang en]
 """
 from pathlib import Path
 
@@ -22,21 +22,29 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
-RES, FIG = Path("results"), Path("figures")
+from figlang import GRILLE, TEXTE2, enregistrer, langue, style
+
+RES = Path("results")
 CLE = ["code_module", "code_presentation", "id_student"]
 BLEU, ORANGE, GRIS = "#2a78d6", "#eb6834", "#6b6a66"
-TEXTE, TEXTE2, GRILLE = "#0b0b0b", "#52514e", "#e4e3df"
-CONFIGS = [("absolues", "aleatoire", "(A) Aléatoire, var. absolues", BLEU, "o", True),
-           ("absolues", "lomo", "(B) LOMO, var. absolues", ORANGE, "s", True),
-           ("relatives", "lomo", "(B) LOMO, var. relatives", GRIS, "D", False)]
-ATTRIBUTS = [("genre", "Femmes − hommes"), ("imd", "IMD Q1 − Q5"), ("handicap", "Handicap O − N")]
-
-plt.rcParams.update({
-    "font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
-    "axes.edgecolor": TEXTE2, "axes.labelcolor": TEXTE, "xtick.color": TEXTE2,
-    "ytick.color": TEXTE2, "text.color": TEXTE, "axes.spines.top": False,
-    "axes.spines.right": False, "pdf.fonttype": 42,
-})
+CONFIGS = [("absolues", "aleatoire", "A", BLEU, "o", True),
+           ("absolues", "lomo", "Babs", ORANGE, "s", True),
+           ("relatives", "lomo", "Brel", GRIS, "D", False)]
+ATTRIBUTS = ["genre", "imd", "handicap"]
+TXT = {
+    "fr": {"att": {"genre": "Femmes − hommes", "imd": "IMD Q1 − Q5", "handicap": "Handicap O − N"},
+           "a": "(a) Écart de rappel (TPR)", "b": "(b) Écart de faux positifs (FPR)",
+           "c": "(c) FPR F − H par module", "x": "Écart entre groupes (IC 95 %)",
+           "cx": "Écart de FPR, protocole (B) LOMO", "tous": "Tous",
+           "A": "(A) Aléatoire, var. absolues", "Babs": "(B) LOMO, var. absolues",
+           "Brel": "(B) LOMO, var. relatives"},
+    "en": {"att": {"genre": "Female − male", "imd": "IMD Q1 − Q5", "handicap": "Disability yes − no"},
+           "a": "(a) Recall (TPR) gap", "b": "(b) False-positive rate gap",
+           "c": "(c) FPR F − M per module", "x": "Between-group gap (95% CI)",
+           "cx": "FPR gap, protocol (B) LOMO", "tous": "All",
+           "A": "(A) Random, absolute features", "Babs": "(B) LOMO, absolute features",
+           "Brel": "(B) LOMO, relative features"},
+}
 
 
 def marque(ax, x, y, c, m, plein, **kw):
@@ -57,14 +65,16 @@ def ecart_fpr_par_module():
 
 
 def main():
+    lang, dossier = langue(__doc__)
+    t = TXT[lang]
+    style()
     gaps = pd.read_csv(RES / "fairness_gaps_c25_active.csv")
     fig, axes = plt.subplots(1, 3, figsize=(7.16, 2.8), constrained_layout=True,
                              gridspec_kw={"width_ratios": [1, 1, 1.05]})
 
     pas = 0.22
-    for ax, met, titre in [(axes[0], "TPR", "(a) Écart de rappel (TPR)"),
-                           (axes[1], "FPR", "(b) Écart de faux positifs (FPR)")]:
-        for i, (att, _) in enumerate(ATTRIBUTS):
+    for ax, met, cle in [(axes[0], "TPR", "a"), (axes[1], "FPR", "b")]:
+        for i, att in enumerate(ATTRIBUTS):
             y0 = len(ATTRIBUTS) - 1 - i
             for j, (v, proto, _, c, m, plein) in enumerate(CONFIGS):
                 r = gaps[(gaps.variables == v) & (gaps.protocole == proto)
@@ -73,9 +83,9 @@ def main():
                 ax.plot([r.ic_bas, r.ic_haut], [yy, yy], color=c, lw=1.4, zorder=2)
                 marque(ax, r.ecart, yy, c, m, plein)
         ax.axvline(0, color=TEXTE2, lw=0.8)
-        ax.set_yticks(range(len(ATTRIBUTS)), [lib for _, lib in ATTRIBUTS][::-1])
-        ax.set_title(titre, loc="left")
-        ax.set_xlabel("Écart entre groupes (IC 95 %)")
+        ax.set_yticks(range(len(ATTRIBUTS)), [t["att"][a] for a in ATTRIBUTS][::-1])
+        ax.set_title(t[cle], loc="left")
+        ax.set_xlabel(t["x"])
         ax.set_xlim(-0.12, 0.24)
     axes[1].set_yticklabels([])
 
@@ -94,10 +104,10 @@ def main():
     ax.annotate(f"+{e['absolues_global']:.2f}", (e["absolues_global"], yg), xytext=(5, 0),
                 textcoords="offset points", va="center", fontsize=7, color=TEXTE2)
     ax.axhline(len(mods) - 0.35, color=GRILLE, lw=0.8)
-    ax.set_yticks(list(y) + [yg], mods + ["Tous"])
+    ax.set_yticks(list(y) + [yg], mods + [t["tous"]])
     ax.axvline(0, color=TEXTE2, lw=0.8)
-    ax.set_title("(c) FPR F − H par module", loc="left")
-    ax.set_xlabel("Écart de FPR, protocole (B) LOMO")
+    ax.set_title(t["c"], loc="left")
+    ax.set_xlabel(t["cx"])
     ax.set_xlim(-0.12, 0.24)
 
     for ax in axes:
@@ -106,14 +116,10 @@ def main():
         ax.tick_params(axis="y", length=0)
 
     poignees = [Line2D([], [], ls="-", lw=1.4, marker=m, color=c, mfc=c if plein else "none",
-                       mec="white" if plein else c, mew=0.8 if plein else 1.2, ms=5.5, label=lib)
-                for _, _, lib, c, m, plein in CONFIGS]
+                       mec="white" if plein else c, mew=0.8 if plein else 1.2, ms=5.5, label=t[k])
+                for _, _, k, c, m, plein in CONFIGS]
     fig.legend(handles=poignees, loc="outside lower center", ncol=3, frameon=False, fontsize=7)
-
-    FIG.mkdir(exist_ok=True)
-    for ext in ["pdf", "png"]:
-        fig.savefig(FIG / f"fairness.{ext}", dpi=200)
-    print(f"Écrit : {FIG / 'fairness.pdf'}, {FIG / 'fairness.png'}")
+    enregistrer(fig, dossier, "fairness")
 
 
 if __name__ == "__main__":

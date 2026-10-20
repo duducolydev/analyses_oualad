@@ -10,8 +10,8 @@ Figure T3 — Le classement se transfère, le seuil non (cutoff 25 %, population
     recalibré sur 100 étudiants étiquetés du module, variables relatives.
 
 Lit results/transfer_by_module_c25_active[_relatives].csv et
-results/recalibration_k_c25_active.csv ; écrit figures/transfer.pdf et .png.
-Usage : python src/fig_transfer.py
+results/recalibration_k_c25_active.csv ; écrit figures/[en/]transfer.pdf et .png.
+Usage : python src/fig_transfer.py [--lang en]
 """
 from pathlib import Path
 
@@ -22,21 +22,30 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
-RES, FIG = Path("results"), Path("figures")
+from figlang import GRILLE, TEXTE, TEXTE2, enregistrer, langue, style
+
+RES = Path("results")
 META = "_c25_active"
 K = 100
 BLEU, ORANGE, AQUA, GRIS = "#2a78d6", "#eb6834", "#1baf7a", "#6b6a66"
-TEXTE, TEXTE2, GRILLE = "#0b0b0b", "#52514e", "#e4e3df"
-
-plt.rcParams.update({
-    "font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
-    "axes.edgecolor": TEXTE2, "axes.labelcolor": TEXTE, "xtick.color": TEXTE2,
-    "ytick.color": TEXTE2, "text.color": TEXTE, "axes.spines.top": False,
-    "axes.spines.right": False, "pdf.fonttype": 42,
-})
+TXT = {
+    "fr": {"a": "(a) Classement : AUC", "b": "(b) Seuil : part d'étudiants signalés",
+           "c": "(c) Dérive de signalement (B − A)",
+           "A": "(A) Aléatoire, module vu", "B": "(B) LOMO, module non vu",
+           "Brel": "(B) LOMO, variables relatives", "obs": "Taux à risque observé",
+           "recal": f"(B) recalibré sur {K} étudiants", "rel": "(B) variables relatives"},
+    "en": {"a": "(a) Ranking: AUC", "b": "(b) Threshold: share flagged",
+           "c": "(c) Flag-rate drift (B − A)",
+           "A": "(A) Random split, module seen", "B": "(B) LOMO, module unseen",
+           "Brel": "(B) LOMO, relative features", "obs": "Observed at-risk rate",
+           "recal": f"(B) recalibrated on {K} students", "rel": "(B) relative features"},
+}
 
 
 def main():
+    lang, dossier = langue(__doc__)
+    t = TXT[lang]
+    style()
     a = pd.read_csv(RES / f"transfer_by_module{META}.csv", index_col=0)
     r = pd.read_csv(RES / f"transfer_by_module{META}_relatives.csv", index_col=0)
     rk = pd.read_csv(RES / f"recalibration_k{META}.csv", header=[0, 1], index_col=[0, 1, 2])
@@ -54,7 +63,7 @@ def main():
     ax.scatter(a.loc[mods, "auc_aleatoire"], y, s=28, color=BLEU, edgecolor="white", lw=0.8, zorder=3)
     ax.scatter(a.loc[mods, "auc_lomo"], y, s=26, marker="s", color=ORANGE, edgecolor="white", lw=0.8, zorder=3)
     ax.scatter(r.loc[mods, "auc_lomo"], y, s=30, marker="D", facecolor="none", edgecolor=GRIS, lw=1.2, zorder=4)
-    ax.set_title("(a) Classement : AUC", loc="left")
+    ax.set_title(t["a"], loc="left")
     ax.set_xlim(0.70, 0.87)
 
     # (b) Seuil : part signalée
@@ -64,22 +73,20 @@ def main():
     ax.scatter(a.loc[mods, "taux_risque"], y, s=70, marker="|", color=TEXTE, lw=1.6, zorder=2)
     ax.scatter(a.loc[mods, "signal_aleatoire"], y, s=28, color=BLEU, edgecolor="white", lw=0.8, zorder=3)
     ax.scatter(a.loc[mods, "signal_lomo"], y, s=26, marker="s", color=ORANGE, edgecolor="white", lw=0.8, zorder=3)
-    ax.set_title("(b) Seuil : part d'étudiants signalés", loc="left")
+    ax.set_title(t["b"], loc="left")
     ax.set_xlim(0.2, 1.0)
 
     # (c) Dérive de signalement après remèdes
     ax = axes[2]
     h = 0.26
-    series = [(a["derive_signalement"], ORANGE, "LOMO brut"),
-              (derive_recal, AQUA, f"Recalibré ({K} étudiants étiquetés)"),
-              (r["derive_signalement"], GRIS, "Variables relatives (sans étiquette)")]
-    for j, (s, c, _) in enumerate(series):
+    series = [(a["derive_signalement"], ORANGE), (derive_recal, AQUA), (r["derive_signalement"], GRIS)]
+    for j, (s, c) in enumerate(series):
         ax.barh(y + (1 - j) * h, s.loc[mods], height=h - 0.04, color=c, zorder=2)
     ax.axvline(0, color=TEXTE2, lw=0.8, zorder=3)
     g = list(mods).index("GGG")
     ax.annotate(f"+{a.loc['GGG', 'derive_signalement']:.2f}", (a.loc["GGG", "derive_signalement"], g + h),
                 xytext=(3, 0), textcoords="offset points", va="center", fontsize=7, color=TEXTE2)
-    ax.set_title("(c) Dérive de signalement (B − A)", loc="left")
+    ax.set_title(t["c"], loc="left")
     ax.set_xlim(-0.15, 0.62)
 
     for ax in axes:
@@ -89,20 +96,15 @@ def main():
         ax.tick_params(axis="y", length=0)
 
     poignees = [
-        Line2D([], [], ls="", marker="o", color=BLEU, mec="white", ms=6, label="(A) Aléatoire, module vu"),
-        Line2D([], [], ls="", marker="s", color=ORANGE, mec="white", ms=6, label="(B) LOMO, module non vu"),
-        Line2D([], [], ls="", marker="D", mfc="none", mec=GRIS, mew=1.2, ms=5.5,
-               label="(B) LOMO, variables relatives"),
-        Line2D([], [], ls="", marker="|", color=TEXTE, ms=8, mew=1.6, label="Taux à risque observé"),
-        plt.Rectangle((0, 0), 1, 1, color=AQUA, label=f"(B) recalibré sur {K} étudiants"),
-        plt.Rectangle((0, 0), 1, 1, color=GRIS, label="(B) variables relatives"),
+        Line2D([], [], ls="", marker="o", color=BLEU, mec="white", ms=6, label=t["A"]),
+        Line2D([], [], ls="", marker="s", color=ORANGE, mec="white", ms=6, label=t["B"]),
+        Line2D([], [], ls="", marker="D", mfc="none", mec=GRIS, mew=1.2, ms=5.5, label=t["Brel"]),
+        Line2D([], [], ls="", marker="|", color=TEXTE, ms=8, mew=1.6, label=t["obs"]),
+        plt.Rectangle((0, 0), 1, 1, color=AQUA, label=t["recal"]),
+        plt.Rectangle((0, 0), 1, 1, color=GRIS, label=t["rel"]),
     ]
     fig.legend(handles=poignees, loc="outside lower center", ncol=3, frameon=False, fontsize=7)
-
-    FIG.mkdir(exist_ok=True)
-    for ext in ["pdf", "png"]:
-        fig.savefig(FIG / f"transfer.{ext}", dpi=200)
-    print(f"Écrit : {FIG / 'transfer.pdf'}, {FIG / 'transfer.png'}")
+    enregistrer(fig, dossier, "transfer")
 
 
 if __name__ == "__main__":

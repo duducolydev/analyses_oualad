@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\caption{Flag-rate drift (B) $-$ (A) and precision of the transferred model under the two remedies (25\% cut-off). Platt-$k$: Platt recalibration on $k=100$ randomly drawn labelled students of the target module (mean of 50 draws, evaluated on the remaining students). Platt-pilot: recalibration on the first presentation of the module, evaluated on the later ones (drift measured against (A) on the same students). Relative: context-relative features, no labels.}
+\label{tab:remedies}
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+ & \multicolumn{4}{c}{Flag-rate drift} & \multicolumn{4}{c}{Precision of (B)} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+Module & Raw & Platt-$k$ & Platt-pilot & Relative & Raw & Platt-$k$ & Platt-pilot & Relative \\
+\midrule
+AAA & +0.09 & +0.07 & +0.09 & +0.03 & 0.38 & 0.38 & 0.38 & 0.46 \\
+BBB & +0.19 & +0.06 & +0.15 & +0.04 & 0.54 & 0.60 & 0.53 & 0.67 \\
+CCC & $-$0.04 & +0.03 & $-$0.11 & +0.03 & 0.78 & 0.74 & 0.85 & 0.73 \\
+DDD & $-$0.05 & +0.03 & +0.04 & $-$0.02 & 0.79 & 0.75 & 0.73 & 0.81 \\
+EEE & +0.07 & +0.10 & +0.14 & +0.01 & 0.69 & 0.66 & 0.62 & 0.72 \\
+FFF & $-$0.02 & +0.08 & +0.07 & $-$0.01 & 0.76 & 0.69 & 0.70 & 0.76 \\
+GGG & +0.51 & $-$0.04 & +0.08 & $-$0.01 & 0.38 & 0.55 & 0.49 & 0.64 \\
+\midrule
+Mean $|\cdot|$ / mean & 0.14 & 0.06 & 0.10 & 0.02 & 0.62 & 0.62 & 0.61 & 0.68 \\
+\bottomrule
+\end{tabular}
+\end{table*}

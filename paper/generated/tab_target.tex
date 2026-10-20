@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{Robustness to the target definition (25\% cut-off, students still enrolled; means over modules). W or F: Withdrawn or Fail; W only: Withdrawn only. Abs./rel.: absolute or relative features. Cost: AUC (A) $-$ AUC (B); Drift: mean absolute flag-rate drift.}
+\label{tab:target}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+Target & Feat. & Risk (\%) & AUC (A) & AUC (B) & Cost & Drift & GGG \\
+\midrule
+W or F & abs. & 38.7 & 0.800 & 0.787 & +0.013 & 0.137 & +0.51 \\
+W or F & rel. & 38.7 & 0.816 & 0.809 & +0.008 & 0.021 & $-$0.01 \\
+W only & abs. & 13.7 & 0.651 & 0.630 & +0.021 & 0.052 & +0.18 \\
+W only & rel. & 13.7 & 0.675 & 0.668 & +0.006 & 0.028 & +0.03 \\
+\bottomrule
+\end{tabular}
+\end{table}

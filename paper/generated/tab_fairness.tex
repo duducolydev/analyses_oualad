@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Between-group gaps in error rates at the 25\% cut-off (threshold 0.5), with 95\% confidence intervals from a student-level cluster bootstrap (1{,}000 resamples). TPR: recall; FPR: false-positive rate; PPV: precision; Flag: share of students flagged.}
+\label{tab:fairness}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Contrast & Configuration & TPR gap & FPR gap & PPV gap & Flag-rate gap \\
+\midrule
+\multirow{3}{*}{Female $-$ male} & (A) absolute & $-$0.080 [$-$0.096, $-$0.061] & $-$0.007 [$-$0.019, +0.005] & $-$0.042 [$-$0.058, $-$0.025] & $-$0.050 [$-$0.062, $-$0.038] \\
+ & (B) absolute & +0.014 [$-$0.003, +0.031] & +0.188 [+0.174, +0.201] & $-$0.168 [$-$0.184, $-$0.151] & +0.105 [+0.093, +0.117] \\
+ & (B) relative & $-$0.062 [$-$0.080, $-$0.044] & +0.016 [+0.004, +0.027] & $-$0.061 [$-$0.077, $-$0.043] & $-$0.029 [$-$0.042, $-$0.018] \\
+\midrule
+\multirow{3}{*}{IMD Q1 $-$ Q5} & (A) absolute & +0.135 [+0.104, +0.165] & +0.148 [+0.127, +0.169] & +0.044 [+0.013, +0.077] & +0.224 [+0.205, +0.243] \\
+ & (B) absolute & +0.143 [+0.113, +0.173] & +0.163 [+0.139, +0.189] & +0.102 [+0.073, +0.133] & +0.223 [+0.203, +0.245] \\
+ & (B) relative & +0.125 [+0.092, +0.157] & +0.113 [+0.092, +0.133] & +0.062 [+0.032, +0.095] & +0.203 [+0.182, +0.224] \\
+\midrule
+\multirow{3}{*}{Disability yes $-$ no} & (A) absolute & +0.095 [+0.067, +0.121] & +0.102 [+0.076, +0.128] & +0.020 [$-$0.006, +0.047] & +0.146 [+0.124, +0.167] \\
+ & (B) absolute & +0.060 [+0.034, +0.085] & +0.098 [+0.069, +0.126] & +0.047 [+0.022, +0.076] & +0.119 [+0.097, +0.140] \\
+ & (B) relative & +0.080 [+0.052, +0.107] & +0.064 [+0.039, +0.090] & +0.041 [+0.015, +0.068] & +0.120 [+0.097, +0.141] \\
+\bottomrule
+\end{tabular}
+\end{table*}

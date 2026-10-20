@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\caption{Ranking versus threshold transfer per module (25\% cut-off, students still enrolled). AUC and flag rate ($p \geq 0.5$) are computed on the students of each module; (A) uses out-of-fold predictions of the random split, (B) the model trained on the six other modules.}
+\label{tab:transfer}
+\begin{tabular}{@{}lccccccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{Ranking (absolute features)} & \multicolumn{3}{c}{Flagged students, \% (absolute)} & \multicolumn{2}{c}{Relative features, (B)} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(l){8-9}
+Module & AUC (A) & AUC (B) & Cost & Observed risk & (A) & (B) & AUC & Flagged (\%) \\
+\midrule
+AAA & 0.733 & 0.720 & +0.013 & 24 & 35 & 44 & 0.793 & 37 \\
+BBB & 0.796 & 0.750 & +0.046 & 39 & 37 & 56 & 0.804 & 40 \\
+CCC & 0.830 & 0.825 & +0.004 & 47 & 44 & 40 & 0.813 & 45 \\
+DDD & 0.837 & 0.830 & +0.007 & 48 & 44 & 39 & 0.842 & 39 \\
+EEE & 0.841 & 0.844 & $-$0.004 & 33 & 26 & 33 & 0.838 & 30 \\
+FFF & 0.828 & 0.816 & +0.012 & 42 & 36 & 34 & 0.833 & 36 \\
+GGG & 0.739 & 0.726 & +0.013 & 37 & 44 & 95 & 0.739 & 30 \\
+\midrule
+Mean & 0.800 & 0.787 & +0.013 & 39 & 38 & 49 & 0.809 & 37 \\
+\bottomrule
+\end{tabular}
+\end{table*}
