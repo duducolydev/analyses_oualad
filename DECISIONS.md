@@ -130,3 +130,20 @@ une propriété des variables. Les variables relatives la réduisent partout (GR
 et de signes alternés). La forêt reste le modèle principal (plus simple,
 dérive la plus faible en relatif, SHAP déjà calculé) ; T5 entre dans l'article
 comme vérification de généralité.
+
+## D12 — Révision : étudiants inscrits dans plusieurs modules (21/10/2026)
+
+Revue 2, point 1. 6,8 % des étudiants de la population active sont inscrits
+dans plusieurs modules ; en LOMO, la part des étudiants du module testé aussi
+présents en entraînement va de 0,3 % (AAA) à 48,7 % (CCC) et 30,3 % (EEE).
+Le protocole (A) est groupé par étudiant, le LOMO standard ne l'était pas.
+Test (`src/10_overlap_check.py`, option `exclure_communs` de
+`eval_contexte_exclu`) : LOMO refait en retirant ces étudiants de
+l'entraînement, 5 cutoffs × 2 variantes. AUC LOMO moyenne inchangée à ±0,002,
+coût de transfert à ±0,002, dérive moyenne à ±0,007. Par module, l'effet va
+dans le sens attendu pour CCC et EEE avec variables absolues (au plus −0,009
+d'AUC) mais reste de l'ordre de la variabilité de la forêt elle-même (AAA :
++0,010 en ne retirant que 2 étudiants). Conclusions inchangées ; le LOMO
+standard reste le protocole principal, ce test est rapporté comme robustesse.
+À faire (étape 2) : estimer la variabilité due à la graine avant d'interpréter
+des écarts par module de l'ordre de 0,01.

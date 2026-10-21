@@ -1,0 +1,3 @@
+[absolues  c=0.25] AUC B 0.787 -> sans chevauchement 0.787 | |dérive| 0.137 -> 0.135  (29s)
+[relatives c=0.25] AUC B 0.809 -> sans chevauchement 0.808 | |dérive| 0.021 -> 0.021  (29s)
+Écrit : results\overlap_check.csv

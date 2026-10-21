@@ -1,0 +1,11 @@
+[absolues  c=0.10] AUC B 0.720 -> sans chevauchement 0.718 | |dérive| 0.198 -> 0.191  (35s)
+[absolues  c=0.20] AUC B 0.771 -> sans chevauchement 0.769 | |dérive| 0.145 -> 0.145  (25s)
+[absolues  c=0.25] AUC B 0.787 -> sans chevauchement 0.787 | |dérive| 0.137 -> 0.135  (26s)
+[absolues  c=0.33] AUC B 0.810 -> sans chevauchement 0.810 | |dérive| 0.132 -> 0.132  (25s)
+[absolues  c=0.50] AUC B 0.857 -> sans chevauchement 0.857 | |dérive| 0.106 -> 0.110  (40s)
+[relatives c=0.10] AUC B 0.740 -> sans chevauchement 0.739 | |dérive| 0.067 -> 0.064  (39s)
+[relatives c=0.20] AUC B 0.786 -> sans chevauchement 0.784 | |dérive| 0.056 -> 0.054  (39s)
+[relatives c=0.25] AUC B 0.809 -> sans chevauchement 0.808 | |dérive| 0.021 -> 0.021  (40s)
+[relatives c=0.33] AUC B 0.825 -> sans chevauchement 0.823 | |dérive| 0.029 -> 0.028  (41s)
+[relatives c=0.50] AUC B 0.871 -> sans chevauchement 0.871 | |dérive| 0.021 -> 0.022  (44s)
+Écrit : results\overlap_check.csv
