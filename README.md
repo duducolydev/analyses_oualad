@@ -64,8 +64,9 @@ Décompresser les **7 CSV** (`studentInfo.csv`, `studentRegistration.csv`,
 ## Exécution
 
 **Tout régénérer** (résultats, figures FR/EN, chiffres et tableaux de l'article,
-`paper/main.pdf`) : `python run_all.py` (~1 h ; `--sans-shap` pour réutiliser
-les résultats SHAP). Les étapes détaillées :
+`paper/main.pdf`) : `python run_all.py` (~3 h ; `--sans-shap` et
+`--sans-sequences` réutilisent les résultats SHAP et T5 existants). Les étapes
+détaillées :
 
 Depuis la racine du dépôt, avec le venv activé :
 
@@ -101,7 +102,11 @@ python src/03_early_curve.py --data data/OULAD --variables absolues --cible with
 python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables relatives --cible withdrawn
 python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25 --variables absolues --cible withdrawn
 
-# 6) T7 : figures en anglais, chiffres et tableaux de l'article, compilation
+# 6) T5 : séquences hebdomadaires, gradient boosting et GRU (~1 h 30)
+python src/09_sequence_models.py --data data/OULAD
+python src/fig_sequence.py
+
+# 7) T7 : figures en anglais, chiffres et tableaux de l'article, compilation
 python src/fig_early_curve.py --lang en   # idem fig_transfer, fig_shap, fig_fairness
 python src/08_paper_assets.py             # paper/generated/macros.tex + tableaux
 cd paper && latexmk -pdf main.tex

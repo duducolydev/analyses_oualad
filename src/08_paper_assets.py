@@ -454,6 +454,56 @@ Target & Feat. & Risk (\%) & AUC (A) & AUC (B) & Cost & Drift & GGG \\
 """)
 
 
+def sequence():
+    """T5 : familles de modèles et information temporelle."""
+    from fig_sequence import derive_moyenne, donnees
+    d = donnees()
+    auc = d.groupby(["variables", "modele", "cutoff", "protocole"])["AUC"].mean().unstack("protocole")
+    der = derive_moyenne(d)
+    b_rel = auc.xs("relatives")["lomo"].unstack("modele")
+    m("resSeqGainMax", f3((b_rel["hgb_seq"] - b_rel["hgb_agg"]).max()))
+    gru = b_rel["gru"] - b_rel["rf_agg"]
+    m("resGruGainMin", f3(gru.min()))
+    m("resGruGainMax", f3(gru.max()))
+    d25 = der.xs(0.25, level="cutoff")
+    m("resDriftAbsModelsMin", f3(d25.xs("absolues").min()))
+    m("resDriftAbsModelsMax", f3(d25.xs("absolues").max()))
+    m("resDriftRelHgb", f3(d25[("relatives", "hgb_agg")]))
+    m("resDriftRelGru", f3(d25[("relatives", "gru")]))
+    c = d[d.cutoff == 0.25].pivot_table(index=["variables", "modele", "module"], columns="protocole",
+                                        values="signalement")
+    ggg = (c["lomo"] - c["aleatoire"]).xs("GGG", level="module")
+    m("resGGGDriftModelsMin", signe(ggg.xs("absolues").min(), 2))
+    m("resGGGDriftModelsMax", signe(ggg.xs("absolues").max(), 2))
+    a25 = auc.xs(0.25, level="cutoff")
+    m("resCostGruRel", f3(a25.loc[("relatives", "gru"), "aleatoire"] - a25.loc[("relatives", "gru"), "lomo"]))
+
+    noms = {"rf_agg": "Forest", "hgb_agg": "Boosting", "hgb_seq": "Boosting + seq.", "gru": "GRU"}
+    corps = []
+    for v, vl in [("absolues", "Absolute"), ("relatives", "Relative")]:
+        for i, mod in enumerate(["rf_agg", "hgb_agg", "hgb_seq", "gru"]):
+            r = a25.loc[(v, mod)]
+            tete = f"\\multirow{{4}}{{*}}{{{vl}}}" if i == 0 else ""
+            corps.append(f"{tete} & {noms[mod]} & {f3(r.aleatoire)} & {f3(r.lomo)} & "
+                         f"{signe(r.aleatoire - r.lomo)} & {f3(d25[(v, mod)])} & {signe(ggg[(v, mod)], 2)} \\\\")
+        corps.append("\\midrule")
+    ecrire("tab_sequence.tex", rf"""\begin{{table}}[t]
+\centering
+\caption{{Model families and temporal information at the 25\% cut-off (students still enrolled; means over modules). Forest and Boosting: aggregated features; Boosting + seq.: aggregated features plus weekly clicks and active days over the complete weeks before the cut-off and trend features; GRU: recurrent network on the weekly sequence plus all static features. Cost: AUC (A) $-$ AUC (B); Drift: mean absolute flag-rate drift; GGG: drift in module GGG.}}
+\label{{tab:sequence}}
+\footnotesize
+\setlength{{\tabcolsep}}{{3pt}}
+\begin{{tabular}}{{@{{}}llccccc@{{}}}}
+\toprule
+Features & Model & AUC (A) & AUC (B) & Cost & Drift & GGG \\
+\midrule
+{chr(10).join(corps[:-1])}
+\bottomrule
+\end{{tabular}}
+\end{{table}}
+""")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     tables = charger(Path("data/OULAD"), Path("data/cache"))
@@ -469,10 +519,11 @@ def main():
     shap()
     equite()
     cible()
+    sequence()
     lignes = ["% Généré par src/08_paper_assets.py — ne pas modifier à la main."]
     lignes += [f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in sorted(MACROS.items())]
     ecrire("macros.tex", "\n".join(lignes) + "\n")
-    print(f"{len(MACROS)} macros et 7 tableaux écrits dans {OUT}/")
+    print(f"{len(MACROS)} macros et 8 tableaux écrits dans {OUT}/")
 
 
 if __name__ == "__main__":

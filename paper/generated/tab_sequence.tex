@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\caption{Model families and temporal information at the 25\% cut-off (students still enrolled; means over modules). Forest and Boosting: aggregated features; Boosting + seq.: aggregated features plus weekly clicks and active days over the complete weeks before the cut-off and trend features; GRU: recurrent network on the weekly sequence plus all static features. Cost: AUC (A) $-$ AUC (B); Drift: mean absolute flag-rate drift; GGG: drift in module GGG.}
+\label{tab:sequence}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+Features & Model & AUC (A) & AUC (B) & Cost & Drift & GGG \\
+\midrule
+\multirow{4}{*}{Absolute} & Forest & 0.800 & 0.787 & +0.013 & 0.137 & +0.51 \\
+ & Boosting & 0.805 & 0.789 & +0.016 & 0.132 & +0.53 \\
+ & Boosting + seq. & 0.808 & 0.794 & +0.014 & 0.128 & +0.52 \\
+ & GRU & 0.799 & 0.793 & +0.006 & 0.118 & +0.47 \\
+\midrule
+\multirow{4}{*}{Relative} & Forest & 0.816 & 0.809 & +0.008 & 0.021 & $-$0.01 \\
+ & Boosting & 0.818 & 0.811 & +0.007 & 0.055 & +0.01 \\
+ & Boosting + seq. & 0.819 & 0.812 & +0.007 & 0.055 & +0.00 \\
+ & GRU & 0.817 & 0.815 & +0.002 & 0.031 & +0.02 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -15,6 +15,7 @@ import pytest
 SRC = Path(__file__).resolve().parent.parent / "src"
 sys.path.insert(0, str(SRC))
 from oulad_features import CLE, charger, construire  # noqa: E402
+from oulad_sequences import n_semaines, sequences  # noqa: E402
 
 # 0.20 et 0.40 tombent sur les échéances du jeu synthétique : des remises
 # tardives franchissent alors le cutoff (cas de fuite à détecter).
@@ -67,6 +68,17 @@ def test_invariance_aux_donnees_futures(tables, cutoff, population, relatives):
              .sort_values(cle).reset_index(drop=True))
     pd.testing.assert_frame_equal(complet.drop(columns="at_risk"),
                                   passe.drop(columns="at_risk"), check_dtype=False)
+
+
+@pytest.mark.parametrize("relatives", [False, True])
+@pytest.mark.parametrize("cutoff", CUTOFFS)
+def test_sequences_invariantes_aux_donnees_futures(tables, cutoff, relatives):
+    cles = construire(tables, cutoff)[CLE + ["id_student"]]
+    complet = sequences(tables, cles, cutoff, relatives)
+    passe = sequences(tronquer(tables, cutoff), cles, cutoff, relatives)
+    pd.testing.assert_frame_equal(complet, passe, check_dtype=False)
+    k = n_semaines(tables["courses"], cutoff)
+    assert len([c for c in complet.columns if c.startswith("seq_c")]) == k
 
 
 @pytest.mark.parametrize("cutoff", CUTOFFS)

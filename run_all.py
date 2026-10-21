@@ -4,11 +4,13 @@
 Régénère TOUS les résultats, figures, tableaux et chiffres de l'article depuis
 les 7 CSV OULAD placés dans data/OULAD/, puis compile paper/main.pdf.
 
-Durée indicative (16 Go de RAM, 16 cœurs) : ~1 h, dont ~40 min pour SHAP.
+Durée indicative (16 Go de RAM, 16 cœurs) : ~3 h, dont ~40 min pour SHAP et
+~1 h 30 pour les modèles séquentiels (T5).
 
-  python run_all.py                 tout
-  python run_all.py --sans-shap     réutilise les résultats SHAP existants
-  python run_all.py --sans-latex    ne compile pas l'article
+  python run_all.py                    tout
+  python run_all.py --sans-shap        réutilise les résultats SHAP existants
+  python run_all.py --sans-sequences   réutilise les résultats T5 existants
+  python run_all.py --sans-latex       ne compile pas l'article
 
 Seule exception : results/reference_rf_c25.txt, sortie des scripts initiaux
 (commit 6ac9053), conservée telle quelle comme point de départ de l'audit.
@@ -26,7 +28,7 @@ PY = sys.executable
 DATA = ["--data", "data/OULAD"]
 
 
-def etapes(sans_shap: bool):
+def etapes(sans_shap: bool, sans_sequences: bool):
     e = [("Tests anti-fuite", [PY, "-m", "pytest", "-q", "tests"])]
     # T2 / T3 : courbes et prédictions (5 cutoffs)
     e += [("Courbe, variables absolues", [PY, "src/03_early_curve.py", *DATA]),
@@ -46,8 +48,11 @@ def etapes(sans_shap: bool):
     e.append(("Stabilité SHAP", [PY, "src/06_shap_stability.py"]))
     # T6
     e.append(("Équité", [PY, "src/07_fairness.py", "--cutoff", "0.25"]))
+    # T5
+    if not sans_sequences:
+        e.append(("Modèles séquentiels et boosting", [PY, "src/09_sequence_models.py", *DATA]))
     # Figures (thèse en français, article en anglais) puis chiffres de l'article
-    for f in ["early_curve", "transfer", "shap", "fairness"]:
+    for f in ["early_curve", "transfer", "shap", "fairness", "sequence"]:
         for lang in ["fr", "en"]:
             e.append((f"Figure {f} ({lang})", [PY, f"src/fig_{f}.py", "--lang", lang]))
     e.append(("Chiffres et tableaux de l'article", [PY, "src/08_paper_assets.py"]))
@@ -57,6 +62,7 @@ def etapes(sans_shap: bool):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sans-shap", action="store_true")
+    ap.add_argument("--sans-sequences", action="store_true")
     ap.add_argument("--sans-latex", action="store_true")
     args = ap.parse_args()
 
@@ -64,7 +70,7 @@ def main():
         sys.exit("Données absentes : placer les 7 CSV OULAD dans data/OULAD/ (voir README).")
     env = {**os.environ, "PYTHONUTF8": "1"}
     debut = time.time()
-    for nom, cmd in etapes(args.sans_shap):
+    for nom, cmd in etapes(args.sans_shap, args.sans_sequences):
         t = time.time()
         print(f"\n=== {nom}", flush=True)
         r = subprocess.run(cmd, cwd=RACINE, env=env)

@@ -4,8 +4,12 @@ pandas==3.0.6
 scikit-learn==1.9.1
 matplotlib==3.11.2
 pyarrow==26.0.0
-# optionnels (T4 SHAP, T5 boosting)
+# T4 : SHAP
 shap==0.54.1
+# T5 : modèle récurrent (GRU), version CPU :
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1
+# non utilisé à ce jour (le gradient boosting de T5 est celui de scikit-learn)
 xgboost==3.4.1
 # tests
 pytest

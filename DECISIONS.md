@@ -112,3 +112,21 @@ sinon une dérive de calibration se lit comme une discrimination (et inversement
 IMD Q1 − Q5 et handicap : écarts présents dans toutes les configurations
 (risque de base plus élevé en Q1 : 51 % contre 33 %), FPR Q1 − Q5 de +0,11 à
 +0,16 ; les variables relatives le réduisent en LOMO (−0,05 [−0,075 ; −0,026]).
+
+## D11 — T5 : information temporelle et autres modèles (21/10/2026)
+
+Séquences : K semaines complètes observées dans TOUTES les présentations au
+cutoff (3, 6, 8, 11, 16), clics et jours actifs par semaine, clics avant le
+début, 4 tendances ; rang dans la présentation en variante relative ; couvertes
+par le test anti-fuite. Modèles : gradient boosting scikit-learn (agrégées ;
+agrégées + séquences), GRU (h = 32, perte pondérée équivalente à « balanced »,
+arrêt précoce sur 10 %). Résultats (population active, variables relatives,
+protocole B) : la séquence ajoute au plus +0,004 d'AUC au boosting ; le GRU
+dépasse la forêt de +0,004 à +0,009 selon le cutoff. Le signal précoce est
+dans les comptes agrégés. La dérive du seuil en variables absolues est la même
+pour les 4 modèles (0,118–0,137 à 25 % ; GGG +0,47 à +0,53) : le mécanisme est
+une propriété des variables. Les variables relatives la réduisent partout (GRU
+0,031, coût de classement 0,002 ; boosting 0,055, dérive résiduelle dispersée
+et de signes alternés). La forêt reste le modèle principal (plus simple,
+dérive la plus faible en relatif, SHAP déjà calculé) ; T5 entre dans l'article
+comme vérification de généralité.
