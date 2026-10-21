@@ -140,10 +140,57 @@ Le protocole (A) est groupé par étudiant, le LOMO standard ne l'était pas.
 Test (`src/10_overlap_check.py`, option `exclure_communs` de
 `eval_contexte_exclu`) : LOMO refait en retirant ces étudiants de
 l'entraînement, 5 cutoffs × 2 variantes. AUC LOMO moyenne inchangée à ±0,002,
-coût de transfert à ±0,002, dérive moyenne à ±0,007. Par module, l'effet va
-dans le sens attendu pour CCC et EEE avec variables absolues (au plus −0,009
-d'AUC) mais reste de l'ordre de la variabilité de la forêt elle-même (AAA :
-+0,010 en ne retirant que 2 étudiants). Conclusions inchangées ; le LOMO
-standard reste le protocole principal, ce test est rapporté comme robustesse.
-À faire (étape 2) : estimer la variabilité due à la graine avant d'interpréter
-des écarts par module de l'ordre de 0,01.
+coût de transfert à ±0,002, dérive moyenne à ±0,007.
+
+CORRIGÉ après l'étape 2 (D13) : j'avais d'abord attribué les écarts par module
+au bruit de la forêt ; c'est faux pour CCC et EEE. L'écart-type dû à la graine
+de l'AUC (B) y est de 0,001, et un contrôle (`src/13_overlap_control.py`,
+5 graines) montre que retirer les étudiants communs fait baisser l'AUC (B) de
+CCC de −0,007 ± 0,001 et d'EEE de −0,006 ± 0,002 en variables absolues, alors
+que retirer le même nombre d'inscriptions au hasard ne change rien (+0,001,
+−0,001). La forêt reconnaît des étudiants déjà vus : le LOMO standard est
+légèrement optimiste pour les modules à fort chevauchement. Effet ≤ 0,002 en
+variables relatives (de l'ordre du bruit), ≤ 0,002 sur les moyennes, et nul sur
+la dérive. Conclusions inchangées ; l'écart de CCC entre variables relatives et
+absolues tombe de −0,012 à −0,006 avec le protocole sans étudiants communs.
+Décision sur le protocole principal : voir D13.
+
+## D13 — Révision étape 2 : incertitude, calibration, seuil, top-q (21/10/2026)
+
+Cutoff 25 %, population active ; `src/11_seed_variability.py`,
+`src/12_robustness.py`, `src/13_overlap_control.py`.
+
+1. **IC 95 %** (bootstrap groupé par étudiant, 1000 tirages, apparié) :
+   relatives − absolues : AUC (B) +0,021 [0,015 ; 0,027], coût −0,005
+   [−0,009 ; −0,001], |dérive| −0,117 [−0,123 ; −0,110]. Coût absolues 0,013
+   [0,009 ; 0,017], relatives 0,008 [0,005 ; 0,010]. Ces IC ne couvrent que
+   l'échantillonnage des étudiants, pas le choix des 7 modules.
+2. **Niveau module (n = 7, Wilcoxon apparié)** : la dérive baisse dans 7 modules
+   sur 7 (p = 0,016, minimum possible) ; l'AUC (B) monte dans 5 sur 7
+   (p = 0,11, non significatif) : le gain d'AUC vient surtout d'AAA (+0,065) et
+   BBB (+0,049) ; CCC baisse (−0,015 ± 0,002 sur 10 graines ; −0,006 sans
+   étudiants communs), EEE à peine (−0,004 ± 0,002). À écrire tel quel.
+3. **Graines (10)** : écart-type de l'AUC (B) par module 0,001–0,004, de la
+   dérive 0,003–0,008 : les écarts discutés dépassent ce bruit.
+4. **Calibration** ((B) − (A), moyenne des |écarts| sur les modules ;
+   absolues → relatives) : Brier 0,039 → 0,006 (GGG +0,183 → +0,005),
+   calibration-in-the-large 0,43 → 0,07 (GGG −1,87 → −0,06), score moyen
+   0,077 → 0,013 (GGG +0,30 → +0,01), pente 0,18 → 0,08 (GGG −0,33 → −0,13).
+   C'est donc aussi un défaut de calibration au sens strict, pas seulement de
+   seuil. Les probabilités ne sont pas calibrées même en (A) (poids équilibrés) :
+   on compare (B) à (A).
+5. **Seuil** : |dérive| moyenne en absolues 0,088 / 0,111 / 0,137 / 0,139 /
+   0,115 aux seuils 0,3–0,7 (GGG 0,16 à 0,60) ; en relatives 0,015–0,031.
+   Le constat ne dépend pas du seuil.
+6. **Top-q par cohorte** (q = taux à risque des 6 modules d'entraînement, sans
+   étiquette cible) : |signalés − risque| 0,071, précision 0,634, F1 0,646 ;
+   variables relatives au seuil 0,5 : 0,059, 0,684, 0,661 ; top-q oracle (vrai
+   risque du module) : 0,001, 0,652, 0,651. Les variables relatives font mieux
+   que top-q, et même que l'oracle en précision et F1. Exception : pour GGG,
+   top-q a un meilleur F1 (0,598 contre 0,571) car le modèle relatif y
+   sous-signale (30 % pour un risque de 37 %, rappel 0,52).
+
+**À décider** : passer le protocole (B) principal au LOMO sans étudiants
+communs (cohérent avec (A), groupé par étudiant), ce qui demande de relancer
+toute la chaîne (~4 h) ; ou garder le LOMO standard et rapporter D12 en
+robustesse.

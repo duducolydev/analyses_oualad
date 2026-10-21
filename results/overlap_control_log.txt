@@ -1,0 +1,39 @@
+[absolues  CCC graine 0] standard 0.825  communs 0.817  hasard 0.826
+[absolues  CCC graine 1] standard 0.824  communs 0.818  hasard 0.825
+[absolues  CCC graine 2] standard 0.825  communs 0.819  hasard 0.828
+[absolues  CCC graine 3] standard 0.827  communs 0.818  hasard 0.827
+[absolues  CCC graine 4] standard 0.827  communs 0.820  hasard 0.827
+[absolues  DDD graine 0] standard 0.830  communs 0.827  hasard 0.829
+[absolues  DDD graine 1] standard 0.829  communs 0.828  hasard 0.829
+[absolues  DDD graine 2] standard 0.828  communs 0.829  hasard 0.829
+[absolues  DDD graine 3] standard 0.830  communs 0.828  hasard 0.829
+[absolues  DDD graine 4] standard 0.830  communs 0.827  hasard 0.830
+[absolues  EEE graine 0] standard 0.844  communs 0.838  hasard 0.841
+[absolues  EEE graine 1] standard 0.843  communs 0.839  hasard 0.841
+[absolues  EEE graine 2] standard 0.842  communs 0.835  hasard 0.843
+[absolues  EEE graine 3] standard 0.841  communs 0.833  hasard 0.841
+[absolues  EEE graine 4] standard 0.842  communs 0.839  hasard 0.842
+[relatives CCC graine 0] standard 0.813  communs 0.811  hasard 0.812
+[relatives CCC graine 1] standard 0.808  communs 0.808  hasard 0.813
+[relatives CCC graine 2] standard 0.813  communs 0.808  hasard 0.817
+[relatives CCC graine 3] standard 0.812  communs 0.807  hasard 0.815
+[relatives CCC graine 4] standard 0.810  communs 0.811  hasard 0.811
+[relatives DDD graine 0] standard 0.842  communs 0.841  hasard 0.842
+[relatives DDD graine 1] standard 0.843  communs 0.842  hasard 0.844
+[relatives DDD graine 2] standard 0.843  communs 0.842  hasard 0.842
+[relatives DDD graine 3] standard 0.843  communs 0.842  hasard 0.843
+[relatives DDD graine 4] standard 0.843  communs 0.841  hasard 0.842
+[relatives EEE graine 0] standard 0.838  communs 0.837  hasard 0.838
+[relatives EEE graine 1] standard 0.836  communs 0.835  hasard 0.839
+[relatives EEE graine 2] standard 0.840  communs 0.834  hasard 0.838
+[relatives EEE graine 3] standard 0.837  communs 0.837  hasard 0.838
+[relatives EEE graine 4] standard 0.836  communs 0.835  hasard 0.838
+condition        effet_communs         effet_hasard        
+                          mean     std         mean     std
+variables module                                           
+absolues  CCC          -0.0073  0.0014       0.0009  0.0011
+          DDD          -0.0017  0.0016      -0.0004  0.0007
+          EEE          -0.0056  0.0016      -0.0008  0.0016
+relatives CCC          -0.0023  0.0028       0.0024  0.0024
+          DDD          -0.0010  0.0004      -0.0001  0.0009
+          EEE          -0.0018  0.0023       0.0005  0.0019
