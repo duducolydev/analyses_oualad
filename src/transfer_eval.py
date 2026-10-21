@@ -95,15 +95,19 @@ def recalibrer(p_cal, y_cal, p_cible):
 
 
 def eval_contexte_exclu(df, features, target, context_col, kind="rf",
-                        seed=SEED, return_pred=False):
+                        seed=SEED, return_pred=False, exclure_communs=None):
     """(B) Une ligne de métriques par contexte laissé de côté (index = contexte) ;
     avec return_pred, renvoie aussi la prédiction de chaque ligne par le modèle
-    qui n'a pas vu son contexte."""
+    qui n'a pas vu son contexte. exclure_communs (nom de colonne, ex. id_student) :
+    retire de l'entraînement les individus présents dans le contexte testé, pour
+    qu'aucun individu ne soit des deux côtés (comme le protocole (A))."""
     res, pred = {}, np.full(len(df), np.nan)
     ctx_col = df[context_col].values
     for ctx in sorted(df[context_col].unique()):
         te_mask = ctx_col == ctx
         tr, te = df[~te_mask], df[te_mask]
+        if exclure_communs is not None:
+            tr = tr[~tr[exclure_communs].isin(set(te[exclure_communs]))]
         m = construire_modele(tr[features], kind, seed).fit(tr[features], tr[target].values)
         pred[te_mask] = m.predict_proba(te[features])[:, 1]
         res[ctx] = scores(te[target].values, pred[te_mask])

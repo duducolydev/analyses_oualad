@@ -1,0 +1,207 @@
+Évaluation scientifique de ton article en vue d’une publication
+Après lecture de ton manuscrit de 9 pages, intitulé “The Ranking Transfers, the Threshold Does Not: Early Dropout Prediction in Unseen Course Contexts”, voici mon appréciation en me plaçant dans la position d’un évaluateur scientifique (peer reviewer) d’une revue internationale en informatique éducative, en Learning Analytics ou en intelligence artificielle appliquée à l’éducation.
+
+Mon avis général est le suivant : l’article présente une contribution scientifique intéressante, un angle de recherche pertinent et un potentiel réel de publication. Cependant, je recommande une révision substantielle avant la soumission à une revue exigeante.
+
+Ce qui me paraît particulièrement prometteur, c’est que tu ne te limites pas à comparer les performances de modèles prédictifs. Tu cherches à expliquer pourquoi un modèle entraîné sur certains cours peut conserver sa capacité à classer les étudiants selon leur risque, tout en produisant des alertes inadaptées lorsqu’il est transféré vers un cours inédit.
+
+Cette distinction entre la qualité du classement (discrimination) et la pertinence du seuil de décision constitue le fil directeur de ton article. Elle donne une cohérence scientifique aux expériences, à l’analyse SHAP et à la proposition de variables relatives au contexte.
+1. Mon évaluation globale
+Originalité de l’angle scientifique
+Bonne
+
+
+Pertinence méthodologique
+Bonne, à consolider
+
+
+Solidité des résultats
+Prometteuse
+
+
+Reproductibilité documentée
+À renforcer
+
+
+État de préparation à la soumission
+Révisions majeures
+
+
+Il s’agit de mon appréciation éditoriale préliminaire, et non d’une prédiction de décision d’une revue ni d’une validation indépendante des calculs.
+Les points forts
+- Une question de recherche bien ciblée. Le transfert entre cours entièrement inédits est plus exigeant qu’une simple séparation aléatoire des étudiants.
+- Un protocole pertinent. Le Leave-One-Module-Out (LOMO) teste explicitement la généralisation à un module non observé pendant l’entraînement.
+- Une contribution méthodologique identifiable. Le remplacement de mesures absolues d’engagement et de résultats précoces par des rangs relatifs dans la cohorte est simple, interprétable et potentiellement utile en situation de cold start.
+- Une analyse plus riche que la seule AUC. L’étude des taux d’alerte, de la précision, de la calibration opérationnelle et des écarts entre groupes donne une portée pratique au travail.
+- Une bonne progression argumentative. L’article passe de l’audit méthodologique au diagnostic du transfert, puis à l’interprétation du phénomène et à une solution sans labels.
+Le résultat le plus intéressant est celui du tableau III : avec les variables absolues, le module GGG conduit à signaler 95 % des étudiants, contre 44 % avec le modèle évalué sur un module connu, alors que le risque observé est d’environ 37 %. Avec les variables relatives, le taux d’alerte pour GGG tombe à 30 %. Ce contraste illustre très efficacement le problème que l’article veut résoudre.
+2. Les problèmes scientifiques à corriger en priorité
+À mon avis, les éléments ci-dessous sont les plus susceptibles de susciter des objections de la part des reviewers. Je les classe selon leur importance pour la validité des conclusions.
+
+1. Vérifier l’indépendance des étudiants dans le protocole LOMO
+Priorité critique
+Le protocole entraîne le modèle sur six modules et le teste sur le septième. Mais OULAD contient plusieurs inscriptions possibles pour un même étudiant.
+
+Si un étudiant apparaît dans un module d’entraînement et dans le module de test, ses caractéristiques démographiques et certaines caractéristiques d’inscription peuvent se retrouver des deux côtés. Cela ne signifie pas automatiquement qu’il y a une fuite directe de la cible, mais cela peut rendre l’évaluation moins indépendante que prévu.
+
+Ce que je recommande :
+- Mesurer le chevauchement des identifiants étudiants entre les modules d’entraînement et de test.
+- Ajouter une expérience où tous les étudiants du module de test sont exclus des modules d’entraînement.
+- Comparer les résultats avec et sans cette exclusion.
+Si les performances restent proches, ton argument en faveur du transfert entre cours sera considérablement renforcé.
+
+
+
+
+2. Distinguer le transfert du classement du transfert de calibration
+Priorité critique
+Le titre affirme que le classement se transfère, mais que le seuil ne se transfère pas. Les résultats appuient surtout une différence entre la discrimination mesurée par l’AUC et la stabilité du taux d’alerte à un seuil fixé à 0,5.
+
+Or, un taux d’alerte qui dérive ne prouve pas, à lui seul, que les probabilités sont mal calibrées. Il peut aussi dépendre de la distribution des scores, de la prévalence de la cible ou de la structure du cours.
+
+Ce que je recommande : ajouter, si les données et les expériences le permettent, le score de Brier, des courbes de calibration et les pentes/interceptions de calibration. Sinon, préciser que tu étudies principalement la portabilité opérationnelle du seuil de décision, et non toute la calibration probabiliste.
+
+
+
+
+3. Corriger la conclusion relative à l’équité entre femmes et hommes
+Priorité critique
+C’est une incohérence précise entre les résultats et leur interprétation.
+
+Dans le tableau VI, l’écart de taux de faux positifs entre femmes et hommes passe de +0,188 avec les variables absolues à +0,016 avec les variables relatives. Toutefois, l’intervalle de confiance à 95 % du second écart est [+0,004 ; +0,027] : il n’inclut pas zéro.
+
+Tu ne peux donc pas conclure que les variables relatives suppriment entièrement cet écart selon cette analyse.
+
+Correction recommandée : remplacer les formulations « removes the gender disparity » ou « removes it » par une formulation plus précise, telle que substantially attenuates the pooled gender disparity.
+
+Il faudra aussi distinguer explicitement la réduction de l’écart agrégé de la démonstration statistique d’une absence de disparité.
+
+
+
+
+4. Renforcer la validation statistique de la méthode proposée
+Priorité élevée
+Le gain d’AUC moyen annoncé passe de 0,787 à 0,809 et le drift absolu moyen de 0,137 à 0,021. Ce sont des résultats intéressants, mais ils proviennent de sept modules seulement.
+
+À renforcer :
+- Fournir des intervalles de confiance pour les différences d’AUC et de taux d’alerte.
+- Détailler les résultats par module, plutôt que de s’appuyer principalement sur les moyennes.
+- Comparer les rangs relatifs à une ou deux autres stratégies simples, par exemple une normalisation robuste ou une standardisation au sein de la cohorte.
+- Tester la sensibilité au seuil de 0,5 et, si possible, à d’autres familles de modèles.
+Les 22 présentations apportent des observations supplémentaires, mais elles ne constituent pas 22 contextes indépendants : plusieurs partagent le même module et le même modèle LOMO.
+
+
+
+
+5. Rendre la reproductibilité vérifiable avant la soumission
+Priorité élevée
+La section sur la disponibilité des données et du code annonce que le script régénère toutes les figures, tous les tableaux et tous les chiffres, mais précise que le code sera publié ultérieurement.
+
+Pour un article reposant sur un audit méthodologique, c’est un point important.
+
+Je recommande de déposer le code dans un dépôt public versionné, avec les instructions d’exécution, les dépendances exactes, les tests anti-fuite, les graines aléatoires et les scripts de génération des résultats. Si cela n’est pas possible avant la soumission, il faut annoncer clairement le statut réel de disponibilité du code, sans laisser entendre que le dépôt est déjà accessible.
+
+
+
+3. La contribution est-elle suffisamment originale ?
+Oui, potentiellement, mais il faut mieux délimiter ce qui est nouveau.
+
+La normalisation, les rangs percentiles, le transfert de modèles et la calibration sont des techniques déjà connues. Un reviewer pourrait donc demander : « Quelle est précisément la nouveauté scientifique, au-delà de l’application de rangs relatifs à des variables LMS ? »
+
+La réponse la plus convaincante n’est pas de présenter les rangs comme une nouvelle technique mathématique. Elle consiste à articuler trois contributions complémentaires :
+1. Une distinction conceptuelle et empirique entre la transférabilité du classement et celle du comportement opérationnel d’un système d’alerte.
+2. Un diagnostic du mécanisme de dérive, reliant les variables exprimées en valeurs absolues aux différences de conception pédagogique des cours.
+3. Une stratégie sans labels, fondée sur les rangs relatifs, qui réduit la dérive du taux d’alerte et améliore les résultats dans le protocole testé.
+Cette combinaison est plus intéressante que chacune de ces idées isolément.
+
+Il faudra néanmoins comparer plus explicitement ta proposition aux travaux antérieurs sur la normalisation par cohorte, la détection du dataset shift, la calibration sans labels et le transfert inter-cours. La revue bibliographique présente les domaines pertinents, mais la frontière exacte entre les contributions antérieures et la tienne pourrait être plus nette.
+4. Mon avis sur la structure et la rédaction
+Sur le plan rédactionnel, le manuscrit est déjà bien organisé : introduction, travaux connexes, méthodes, résultats, discussion et conclusion. Le titre est accrocheur, l’abstract expose le problème et les contributions sont énumérées clairement.
+
+Voici les améliorations que je privilégierais.
+Élément	Mon appréciation	Amélioration prioritaire
+Titre	Mémorable et précis	Conserver si les analyses de robustesse confirment le message
+Résumé	Dense et informatif	Atténuer les conclusions trop catégoriques
+Introduction	Problème bien posé	Renforcer la comparaison avec les méthodes de normalisation existantes
+Méthodologie	Ambitieuse et structurée	Clarifier l’indépendance des unités, les estimations et les intervalles de confiance
+Résultats	Très bons exemples concrets	Distinguer significativité statistique, ampleur de l’effet et portée générale
+Discussion	Cohérente avec la question de recherche	Mieux délimiter les conclusions sur la calibration et l’équité
+Limites	Présentes et pertinentes	Ajouter explicitement les limites liées à l’unique institution et aux sept modules
+Reproductibilité	Engagement annoncé	Publier le code et rendre les résultats vérifiables
+Un point éditorial important
+L’article est présenté comme un preprint. Avant la soumission, je vérifierais également toutes les références bibliographiques, en particulier les publications de 2026, leurs métadonnées, leur statut de publication et la correspondance exacte entre les citations et les affirmations du texte. Je n’ai pas effectué ici de vérification externe systématique de ces références.
+5. Quelle revue viser ?
+Je viserais d’abord une revue qui valorise les méthodes d’analyse des traces d’apprentissage, la généralisation des modèles et leur déploiement responsable, plutôt qu’une revue centrée exclusivement sur les architectures d’IA les plus performantes.
+
+Voici trois pistes à examiner. Ce sont des cibles possibles, pas des garanties d’adéquation ou d’acceptation.
+
+
+
+
+
+
+
+
+
+Journal of Learning Analytics
+Cible thématique prioritaire
+
+Bonne piste pour un article portant sur les données LMS, les systèmes d’alerte, l’évaluation des modèles et les conséquences pédagogiques. Il faudra insister sur la contribution à la pratique et à la recherche en Learning Analytics.
+
+Site de la revue
+
+
+
+
+
+
+
+
+
+
+
+
+IEEE Transactions on Learning Technologies
+Cible ambitieuse
+
+À envisager si tu renforces la validation expérimentale, les comparaisons méthodologiques et la portée générale de la solution proposée. Une démonstration plus robuste du transfert serait particulièrement importante.
+
+Portail IEEE Xplore
+
+
+
+
+
+
+
+
+
+
+
+
+International Journal of Artificial Intelligence in Education
+Cible exigeante
+
+Elle pourrait convenir si tu développes davantage les implications pour les systèmes intelligents d’accompagnement des étudiants et la manière dont les alertes peuvent être utilisées dans les interventions éducatives.
+
+Site de la revue
+
+
+
+Le choix définitif dépendra de la version révisée, du niveau de validation empirique, des exigences éditoriales en vigueur et de ton objectif de publication. Il faut vérifier les instructions aux auteurs et les articles récents de chaque revue avant de choisir.
+6. Le plan de révision que je suivrais
+Je procéderais dans cet ordre, pour éviter de polir la rédaction avant d’avoir sécurisé les résultats.
+1. Audit du protocole. Vérifier les chevauchements d’étudiants entre les modules, les dates de disponibilité des variables et la cohérence du filtrage des inscriptions.
+2. Validation des résultats principaux. Recalculer les métriques et quantifier l’incertitude des différences entre variables absolues et relatives.
+3. Révision des affirmations. Corriger les formulations sur la calibration, le seuil de décision et la disparition des écarts entre groupes.
+4. Renforcement de la comparaison avec l’existant. Préciser les différences avec les méthodes de normalisation, de recalibration et de transfert déjà publiées.
+5. Reproductibilité et présentation. Finaliser le dépôt de code, vérifier les références et harmoniser les tableaux, figures et notations.
+6. Adaptation à la revue cible. Ajuster l’introduction, la discussion et la lettre de soumission aux attentes de la revue retenue.
+Verdict final
+Je ne considérerais pas cet article comme un simple exercice de comparaison de modèles. Il porte une idée scientifique identifiable, une méthodologie relativement ambitieuse et un résultat opérationnel susceptible d’intéresser la communauté des Learning Analytics.
+
+Mon principal doute ne porte pas sur la pertinence du sujet, mais sur le degré de preuve nécessaire pour soutenir certaines affirmations : indépendance du protocole de transfert, distinction entre dérive du taux d’alerte et défaut de calibration, incertitude statistique et interprétation des écarts d’équité.
+
+Si ces points sont correctement traités, le manuscrit pourrait constituer une soumission crédible à une bonne revue internationale spécialisée. En l’état, je privilégierais une révision scientifique majeure avant soumission, plutôt qu’un simple travail de correction linguistique.
+
+La prochaine étape la plus utile serait de réaliser un audit technique du protocole et des résultats, car c’est ce qui déterminera si les conclusions centrales résistent à une évaluation indépendante.

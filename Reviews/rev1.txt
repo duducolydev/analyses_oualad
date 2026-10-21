@@ -1,0 +1,59 @@
+Avis général
+Je trouve cet article solide, original et publiable, mais plutôt après révisions mineures à modérées dans une revue spécialisée en learning analytics / educational data mining / technologie éducative (par ex. Journal of Learning Analytics, IEEE Transactions on Learning Technologies, Computers & Education: Artificial Intelligence, EDM/LAK selon format). Pour une revue généraliste très sélective, je demanderais une révision majeure, surtout à cause du périmètre empirique limité à OULAD.
+
+Le message central est clair et intéressant : le classement des étudiants par risque se transfère bien à un module inconnu, mais le seuil de décision ne se transfère pas. L’article ne se contente pas de dire “le transfert marche moins bien” : il décompose le problème, en propose un mécanisme (échelles absolues vs relatives), une remédiation sans labels (percentiles intra-cohorte) et une conséquence fairness (effet de composition). C’est une contribution méthodologique réelle, pas un simple benchmark OULAD de plus.
+
+Points forts
+Audit méthodologique très utile.
+Les auteurs montrent que trois choix courants gonflent artificiellement l’écart de transfert : garder les étudiants déjà désinscrits, utiliser des scores soumis après la date de prédiction, et comparer un AUC pooled à une moyenne par module. Le passage de 0,033 à 0,013 est convaincant. Cet audit seul justifie presque la publication.
+
+Décomposition ranking / threshold.
+La séparation entre difficulté intrinsèque du module, coût de ranking et dérive du seuil est pédagogique et opérationnellement pertinente. Le cas GGG (44 % → 95 % d’alertes pour un risque observé de 37 %) est marquant.
+
+Remédiation label-free crédible.
+Les features relatives à la cohorte (percentiles) réduisent la dérive moyenne de 0,137 à 0,021 et améliorent l’AUC LOMO de 0,787 à 0,809. Le fait que cela batte Platt sur 100 étudiants étiquetés est un résultat fort pour les institutions sans historique.
+
+Mécanisme interprétable.
+L’analyse SHAP signée montre que le modèle transféré utilise souvent les mêmes variables, mais les lit sur des échelles absolues dont le sens dépend du design du cours. C’est une explication claire et utile.
+
+Conséquence fairness intéressante.
+Le gap FPR femme-homme de +0,188 en LOMO, alors qu’il est absent ou inversé dans chaque module, est un bel exemple d’effet de composition / paradoxe de Simpson. La réduction à +0,016 avec features relatives est convaincante.
+
+Reproductibilité et rigueur.
+Test d’invariance pour la fuite, seeds fixes, script unique, code annoncé : bonnes pratiques.
+
+Réserves principales
+Périmètre empirique limité.
+Tout repose sur OULAD, une seule institution, 7 modules. Le titre parle de “unseen course contexts”, mais il s’agit de modules inconnus dans la même université, pas d’autres institutions ou pays. Les auteurs le reconnaissent, mais il faudrait le cadrer encore plus explicitement dans le titre/abstract.
+
+Puissance statistique faible au niveau module.
+Les corrélations module-level avec n = 7 sont exploratoires, et les présentations ne sont pas indépendantes. Les auteurs le disent, mais il faudrait ajouter des intervalles de confiance sur les métriques principales (AUC, drift, gaps) et éviter toute surinterprétation des corrélations.
+
+Un seul modèle et un seuil fixe à 0,5.
+Le random forest avec poids équilibrés et seuil 0,5 est raisonnable pour une étude méthodologique, mais la conclusion “threshold does not transfer” dépend du seuil. Il faudrait au minimum une analyse de sensibilité au seuil, et idéalement des métriques de calibration (Brier, calibration slope/intercept, courbes de calibration) en plus de Platt.
+
+Les features relatives ont aussi des limites.
+Les percentiles intra-cohorte sont séduisants, mais ils supposent une cohorte suffisamment grande et stable au moment de la prédiction. Les auteurs mentionnent le cas des petites cohortes et d’une cohorte collectivement désengagée ; il faudrait le quantifier un peu ou en discuter davantage.
+
+Fairness encore partielle.
+Le résultat genre est excellent. Les gaps IMD et disability restent et sont interprétés prudemment, ce qui est bien. Mais on aimerait peut-être une discussion plus explicite des choix politiques : que faire des alertes si les gaps ne peuvent pas être éliminés ?
+
+Recommandations pour une révision
+Ajouter des intervalles de confiance pour l’écart de transfert, le drift et les AUC principales, pas seulement pour la fairness.
+
+Ajouter une analyse de sensibilité au seuil (0,3 / 0,4 / 0,5 / 0,6) et des métriques de calibration.
+
+Préciser dans le titre ou l’abstract que le transfert étudié est inter-modules au sein d’OULAD, pas inter-institutions.
+
+Renforcer la lisibilité des tableaux (surtout Table I, III, V, VI) et vérifier la mise en page finale.
+
+Ajouter une phrase sur la taille minimale de cohorte pour que les percentiles soient fiables.
+
+Si possible, un test de robustesse avec un deuxième modèle (gradient boosting) serait un plus, même court.
+
+Verdict
+Pour une revue spécialisée : acceptation avec révisions mineures à modérées.
+Pour une revue très généraliste : révision majeure, car il manque une validation hors OULAD ou au moins une discussion plus forte de la généralité.
+
+Ce n’est pas un article à rejeter : il est au-dessus du seuil, bien écrit, méthodologiquement sérieux et il apporte une contribution claire. Les réserves portent surtout sur la portée empirique et quelques robustesses statistiques, pas sur le cœur de l’argument.
+
