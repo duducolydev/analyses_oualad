@@ -12,14 +12,11 @@ principal), pour un cutoff et une population :
      dérive de calibration   = taux de signalement (p >= 0,5) en (B) − en (A)
 2. Descripteurs de contexte (oulad_profiles.py) + dissimilarité estimée
    (classifieur contexte vs reste), corrélations de Spearman avec les trois axes.
-3. Recalibration : le seuil se rétablit-il avec un petit échantillon étiqueté
-   du contexte cible ?
-     (i)  k étudiants tirés au hasard (k = 25, 50, 100, 200 ; 50 tirages)
-     (ii) la première présentation du module (cohorte pilote), évaluée sur
-          les présentations suivantes
+Les remèdes (recalibration, top-q, variables relatives) sont comparés dans
+14_remedies.py, sur les mêmes étudiants et avec une référence commune.
 
 Sorties dans results/ : transfer_by_module.csv, transfer_by_presentation.csv,
-transfer_correlations.csv, recalibration_k.csv, recalibration_temporelle.csv
+transfer_correlations.csv
 
 Usage : python src/04_transfer_analysis.py --data data/OULAD --cutoff 0.25
 """
@@ -33,14 +30,12 @@ from scipy.stats import spearmanr
 
 from oulad_features import CIBLES, CLE, charger, construire
 from oulad_profiles import profils
-from transfer_eval import dissimilarite_contexte, recalibrer, scores
+from transfer_eval import dissimilarite_contexte, scores
 
 warnings.filterwarnings("ignore")
 ID_COLS = ["id_student", "code_module", "code_presentation"]
 TARGET = "at_risk"
 AXES = ["auc_aleatoire", "cout_transfert_auc", "derive_signalement"]
-KS = [25, 50, 100, 200]
-N_TIRAGES = 50
 
 
 def issues(g: pd.DataFrame) -> dict:
@@ -82,47 +77,6 @@ def benjamini_hochberg(p: pd.Series) -> pd.Series:
     ordre = p.sort_values()
     q = (ordre * len(p) / np.arange(1, len(p) + 1))[::-1].cummin()[::-1].clip(upper=1)
     return q.reindex(p.index)
-
-
-def metriques_seuil(y, p) -> dict:
-    s = scores(y, p)
-    return {"rappel": s["Rappel"], "precision": s["Précision"], "f1": s["F1"],
-            "signalement": (p >= 0.5).mean()}
-
-
-def recalibration_k(preds: pd.DataFrame) -> pd.DataFrame:
-    rng = np.random.default_rng(0)
-    lignes = []
-    for mod, g in preds.groupby("code_module"):
-        y, pa, pb = g[TARGET].values, g["p_aleatoire"].values, g["p_lomo"].values
-        for k in KS:
-            for r in range(N_TIRAGES):
-                cal = rng.choice(len(g), size=k, replace=False)
-                if y[cal].min() == y[cal].max():
-                    continue  # échantillon d'une seule classe : recalibration impossible
-                reste = np.setdiff1d(np.arange(len(g)), cal)
-                prc = recalibrer(pb[cal], y[cal], pb[reste])
-                for meth, p in [("aleatoire", pa[reste]), ("lomo_brut", pb[reste]),
-                                ("lomo_recalibre", prc)]:
-                    lignes.append({"module": mod, "k": k, "tirage": r, "methode": meth,
-                                   **metriques_seuil(y[reste], p)})
-    return (pd.DataFrame(lignes).groupby(["module", "k", "methode"])
-            .agg(["mean", "std"]).drop(columns="tirage"))
-
-
-def recalibration_temporelle(preds: pd.DataFrame) -> pd.DataFrame:
-    lignes = []
-    for mod, g in preds.groupby("code_module"):
-        pres = sorted(g["code_presentation"].unique())  # 2013B < 2013J < 2014B < 2014J
-        cal, test = g[g["code_presentation"] == pres[0]], g[g["code_presentation"] != pres[0]]
-        y = test[TARGET].values
-        prc = recalibrer(cal["p_lomo"].values, cal[TARGET].values, test["p_lomo"].values)
-        for meth, p in [("aleatoire", test["p_aleatoire"].values),
-                        ("lomo_brut", test["p_lomo"].values), ("lomo_recalibre", prc)]:
-            lignes.append({"module": mod, "presentation_calibration": pres[0],
-                           "n_calibration": len(cal), "n_test": len(test), "methode": meth,
-                           **metriques_seuil(y, p)})
-    return pd.DataFrame(lignes)
 
 
 def main():
@@ -171,17 +125,11 @@ def main():
                       correlations(t_pres, [d for d in descr if d in t_pres.columns], "presentation")])
     corr["q_valeur_BH"] = corr.groupby("niveau")["p_valeur"].transform(benjamini_hochberg)
 
-    # 3. Recalibration
-    rk = recalibration_k(preds)
-    rt = recalibration_temporelle(preds)
-
     meta = (f"_c{round(args.cutoff*100):02d}_{args.population}"
             + ("_relatives" if relatives else "") + ("_withdrawn" if wd else ""))
     t_mod.to_csv(args.out / f"transfer_by_module{meta}.csv", index_label="module")
     t_pres.to_csv(args.out / f"transfer_by_presentation{meta}.csv")
     corr.to_csv(args.out / f"transfer_correlations{meta}.csv", index=False)
-    rk.to_csv(args.out / f"recalibration_k{meta}.csv")
-    rt.to_csv(args.out / f"recalibration_temporelle{meta}.csv", index=False)
 
     pd.set_option("display.width", 200)
     print(t_mod[["n", "taux_risque"] + AXES + ["signal_aleatoire", "signal_lomo",
@@ -190,9 +138,6 @@ def main():
     fortes = corr[corr["p_valeur"] < 0.05].sort_values(["niveau", "axe", "p_valeur"])
     print("\nCorrélations de Spearman p < 0,05 (q = Benjamini-Hochberg par niveau) :\n",
           fortes.round(3).to_string(index=False))
-    print("\nRecalibration temporelle :\n", rt.round(3).to_string(index=False))
-    print("\nRecalibration k (moyenne sur les modules) :\n",
-          rk.xs("mean", axis=1, level=1).groupby(["k", "methode"]).mean().round(3))
     print(f"\nÉcrit dans {args.out}/ (suffixe {meta})")
 
 

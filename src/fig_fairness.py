@@ -52,16 +52,14 @@ def marque(ax, x, y, c, m, plein, **kw):
                edgecolor="white" if plein else c, lw=0.8 if plein else 1.2, zorder=3, **kw)
 
 
-def ecart_fpr_par_module():
-    info = pd.read_parquet("data/cache/studentInfo.parquet")[CLE + ["gender"]]
-    out = {}
-    for v, tag in [("absolues", "rf"), ("relatives", "rf_rel")]:
-        p = pd.read_parquet(RES / "preds" / f"preds_{tag}_active_c25.parquet").merge(info, on=CLE)
-        neg = p[p["at_risk"] == 0].assign(f=lambda d: d["p_lomo"] >= 0.5)
-        t = neg.groupby(["code_module", "gender"])["f"].mean().unstack()
-        out[v] = t["F"] - t["M"]
-        out[v + "_global"] = neg[neg.gender == "F"]["f"].mean() - neg[neg.gender == "M"]["f"].mean()
-    return out
+def ecart_fpr_par_module(gaps: pd.DataFrame) -> pd.DataFrame:
+    """Écart de FPR femmes − hommes en (B) LOMO, par module et global, avec IC 95 %
+    (07_fairness.py, mêmes tirages bootstrap)."""
+    intra = pd.read_csv(RES / "fairness_within_module_c25_active.csv")
+    intra = intra[(intra.protocole == "lomo") & (intra.attribut == "genre") & (intra.metrique == "FPR")]
+    glob = gaps[(gaps.protocole == "lomo") & (gaps.attribut == "genre") & (gaps.metrique == "FPR")]
+    glob = glob.assign(module="__tous__")
+    return pd.concat([intra, glob])[["variables", "module", "ecart", "ic_bas", "ic_haut"]]
 
 
 def main():
@@ -90,25 +88,21 @@ def main():
     axes[1].set_yticklabels([])
 
     ax = axes[2]
-    e = ecart_fpr_par_module()
-    mods = sorted(e["absolues"].index)[::-1]
-    y = np.arange(len(mods))
-    for i, mod in enumerate(mods):
-        ax.plot([e["absolues"][mod], e["relatives"][mod]], [i, i], color=GRILLE, lw=2, zorder=1)
-    marque(ax, e["absolues"][mods], y, ORANGE, "s", True)
-    marque(ax, e["relatives"][mods], y, GRIS, "D", False)
-    yg = len(mods) + 0.3
-    marque(ax, e["absolues_global"], yg, ORANGE, "s", True)
-    marque(ax, e["relatives_global"], yg, GRIS, "D", False)
-    ax.plot([e["absolues_global"], e["relatives_global"]], [yg, yg], color=GRILLE, lw=2, zorder=1)
-    ax.annotate(f"+{e['absolues_global']:.2f}", (e["absolues_global"], yg), xytext=(5, 0),
-                textcoords="offset points", va="center", fontsize=7, color=TEXTE2)
-    ax.axhline(len(mods) - 0.35, color=GRILLE, lw=0.8)
-    ax.set_yticks(list(y) + [yg], mods + [t["tous"]])
+    e = ecart_fpr_par_module(gaps).set_index(["variables", "module"])
+    mods = sorted(m for m in e.index.get_level_values("module").unique() if m != "__tous__")[::-1]
+    lignes = mods + ["__tous__"]
+    y = {m: i if m != "__tous__" else len(mods) + 0.4 for i, m in enumerate(lignes)}
+    for v, dy, c, mk, plein in [("absolues", 0.17, ORANGE, "s", True), ("relatives", -0.17, GRIS, "D", False)]:
+        for m in lignes:
+            r = e.loc[(v, m)]
+            ax.plot([r.ic_bas, r.ic_haut], [y[m] + dy] * 2, color=c, lw=1.2, zorder=2)
+            marque(ax, r.ecart, y[m] + dy, c, mk, plein)
+    ax.axhline(len(mods) - 0.3, color=GRILLE, lw=0.8)
+    ax.set_yticks([y[m] for m in lignes], mods + [t["tous"]])
     ax.axvline(0, color=TEXTE2, lw=0.8)
     ax.set_title(t["c"], loc="left")
     ax.set_xlabel(t["cx"])
-    ax.set_xlim(-0.12, 0.24)
+    ax.set_xlim(-0.17, 0.24)
 
     for ax in axes:
         ax.grid(axis="x", color=GRILLE, lw=0.6)

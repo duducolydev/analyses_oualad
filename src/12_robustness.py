@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Révision (étape 2) — Incertitude, calibration, seuil, alternative top-q,
+Révision (étape 2) — Incertitude, calibration, seuil,
 à partir des prédictions enregistrées (cutoff 25 %, population active) et des
 relances multi-graines de 11_seed_variability.py.
 
@@ -18,10 +18,7 @@ relances multi-graines de 11_seed_variability.py.
    pente de calibration. Avec des poids de classe équilibrés, les probabilités
    ne sont pas calibrées même en (A) : on compare (B) à (A).
 5. Seuil : |dérive| aux seuils 0,3–0,7, et décalage du score moyen (sans seuil).
-6. Alternative top-q : signaler, dans chaque cohorte (présentation), la part q
-   d'étudiants au score le plus élevé, q = taux à risque des six modules
-   d'entraînement (connu sans étiquette du module cible) ; comparée au modèle
-   relatif au seuil 0,5. Référence oracle : q = vrai taux du module.
+(L'alternative top-q est comparée aux autres remèdes dans 14_remedies.py.)
 
 Sorties : results/robustesse_*_c25.csv ; résumé à l'écran.
 Usage : python src/12_robustness.py
@@ -172,34 +169,6 @@ def seuils(p):
     return pd.DataFrame(lignes)
 
 
-# 6. Top-q par cohorte -------------------------------------------------------------
-def metriques(y, f):
-    vp = (y & f).sum()
-    prec = vp / max(f.sum(), 1)
-    rap = vp / max(y.sum(), 1)
-    return {"signalement": f.mean(), "precision": prec, "rappel": rap,
-            "F1": 2 * prec * rap / max(prec + rap, 1e-9)}
-
-
-def top_q(p):
-    d = p["absolues"].copy()
-    r = p["relatives"]
-    lignes = []
-    for m in sorted(d.code_module.unique()):
-        dm = d[d.code_module == m]
-        q_train = d.loc[d.code_module != m, TARGET].mean()
-        y = dm[TARGET].values.astype(bool)
-        rang = dm.groupby("code_presentation")["p_lomo"].rank(pct=True, ascending=False)
-        for nom, f in [("absolues, seuil 0,5", dm.p_lomo.values >= 0.5),
-                       ("absolues, top-q (q = risque d'entraînement)", (rang <= q_train).values),
-                       ("absolues, top-q oracle (q = vrai risque du module)", (rang <= y.mean()).values),
-                       ("relatives, seuil 0,5", r.loc[dm.index, "p_lomo"].values >= 0.5),
-                       ("(A) absolues, seuil 0,5 (module vu)", dm.p_aleatoire.values >= 0.5)]:
-            lignes.append({"module": m, "regle": nom, "risque_observe": y.mean(), "q_train": q_train,
-                           **metriques(y, f)})
-    return pd.DataFrame(lignes)
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cutoff", type=float, default=0.25)
@@ -239,12 +208,6 @@ def main():
     s.to_csv(RES / f"robustesse_seuils_c{c}.csv", index=False)
     print("\n5. Sensibilité au seuil :\n", s.round(3).to_string(index=False))
 
-    tq = top_q(p)
-    tq.to_csv(RES / f"robustesse_topq_c{c}.csv", index=False)
-    resume = tq.groupby("regle")[["signalement", "precision", "rappel", "F1"]].mean()
-    resume["|signalés − risque|"] = tq.assign(e=(tq.signalement - tq.risque_observe).abs()).groupby("regle").e.mean()
-    print("\n6. Top-q par cohorte (moyennes sur les modules) :\n", resume.round(3).to_string())
-    print("\nGGG :\n", tq[tq.module == "GGG"].round(3).to_string(index=False))
 
 
 if __name__ == "__main__":

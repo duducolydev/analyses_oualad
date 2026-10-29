@@ -40,7 +40,8 @@ METRIQUES = ["AUC", "Rappel", "Précision", "F1"]
 def une_config(df, kind):
     feats = [c for c in df.columns if c not in ID_COLS + [TARGET]]
     a_plis, oof = eval_aleatoire(df, feats, TARGET, "id_student", kind, return_oof=True)
-    b, pred_b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind, return_pred=True)
+    b, pred_b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind, return_pred=True,
+                                    exclure_communs="id_student")  # LOMO strict (D14)
     b[METRIQUES] = b[METRIQUES].astype(float)
     preds = df[ID_COLS + [TARGET]].assign(p_aleatoire=oof, p_lomo=pred_b)
 

@@ -72,7 +72,8 @@ def main():
                 feats = [c for c in df.columns if c not in ID_COLS + [TARGET]]
                 t = time.time()
                 _, oof = eval_aleatoire(df, feats, TARGET, "id_student", kind, return_oof=True)
-                _, pred_b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind, return_pred=True)
+                _, pred_b = eval_contexte_exclu(df, feats, TARGET, "code_module", kind, return_pred=True,
+                                                exclure_communs="id_student")  # LOMO strict (D14)
                 df[ID_COLS + [TARGET]].assign(p_aleatoire=oof, p_lomo=pred_b).to_parquet(
                     args.out / "preds" / f"preds_{nom}{'_rel' if rel else ''}_{args.population}_c{round(cut*100):02d}.parquet",
                     index=False)

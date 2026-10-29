@@ -13,8 +13,14 @@ dans OULAD est rattaché à Q1), handicap. Pour chaque variante de variables
   - variation des écarts, avec les MÊMES tirages (bootstrap apparié) :
     transfert (B − A) et variables (relatives − absolues, en LOMO).
 
+  - écarts À L'INTÉRIEUR de chaque module (mêmes tirages), avec les effectifs
+    de chaque groupe (total, positifs, négatifs) : distingue un écart global
+    dû à la composition des modules d'un écart présent dans les modules (revue 3).
+Bootstrap groupé par étudiant : 6,8 % des étudiants sont inscrits dans
+plusieurs modules, leurs lignes ne sont pas indépendantes.
+
 Sorties : results/fairness_groups<meta>.csv, fairness_gaps<meta>.csv,
-          fairness_gap_changes<meta>.csv
+          fairness_gap_changes<meta>.csv, fairness_within_module<meta>.csv
 Usage : python src/07_fairness.py --cutoff 0.25
 """
 import argparse
@@ -102,6 +108,35 @@ def main():
                                    "ic_bas": np.nanpercentile(d, 2.5), "ic_haut": np.nanpercentile(d, 97.5)})
     ecarts = pd.DataFrame(ecarts)
 
+    # Écarts à l'intérieur de chaque module (mêmes tirages bootstrap)
+    intra = []
+    modules = base["code_module"].values
+    for v in VARIANTES:
+        for proto, col in PROTOCOLES.items():
+            f = (preds[v][col].values >= 0.5).astype(float)
+            for att, gr in groupes.items():
+                g1, g2 = ATTRIBUTS[att]
+                for mod in sorted(set(modules)):
+                    k = modules == mod
+                    m1, m2 = (gr[k] == g1).astype(float), (gr[k] == g2).astype(float)
+                    b1 = metriques_ponderees(W[:, k], y[k], f[k], m1)
+                    b2 = metriques_ponderees(W[:, k], y[k], f[k], m2)
+                    p1 = metriques_ponderees(un[:, k], y[k], f[k], m1)
+                    p2 = metriques_ponderees(un[:, k], y[k], f[k], m2)
+                    eff = {f"n_{g1}": int(m1.sum()), f"n_{g2}": int(m2.sum()),
+                           f"pos_{g1}": int((m1 * y[k]).sum()), f"pos_{g2}": int((m2 * y[k]).sum()),
+                           f"neg_{g1}": int((m1 * (1 - y[k])).sum()), f"neg_{g2}": int((m2 * (1 - y[k])).sum())}
+                    for met in METRIQUES:
+                        d = b1[met] - b2[met]
+                        intra.append({"variables": v, "protocole": proto, "attribut": att, "module": mod,
+                                      "contraste": f"{g1} − {g2}", "metrique": met,
+                                      "ecart": float(p1[met][0] - p2[met][0]),
+                                      "ic_bas": np.nanpercentile(d, 2.5), "ic_haut": np.nanpercentile(d, 97.5),
+                                      **{"n_groupe_1": eff[f"n_{g1}"], "n_groupe_2": eff[f"n_{g2}"],
+                                         "pos_groupe_1": eff[f"pos_{g1}"], "pos_groupe_2": eff[f"pos_{g2}"],
+                                         "neg_groupe_1": eff[f"neg_{g1}"], "neg_groupe_2": eff[f"neg_{g2}"]}})
+    intra = pd.DataFrame(intra)
+
     # Variation des écarts (bootstrap apparié)
     est = ecarts.set_index(["variables", "protocole", "attribut", "metrique"])["ecart"]
     changements = []
@@ -120,6 +155,7 @@ def main():
     pd.DataFrame(lignes_g).to_csv(args.out / f"fairness_groups{meta}.csv", index=False)
     ecarts.to_csv(args.out / f"fairness_gaps{meta}.csv", index=False)
     changements.to_csv(args.out / f"fairness_gap_changes{meta}.csv", index=False)
+    intra.to_csv(args.out / f"fairness_within_module{meta}.csv", index=False)
 
     pd.set_option("display.width", 220)
     print(pd.DataFrame(lignes_g).round(3).to_string(index=False))
@@ -128,6 +164,11 @@ def main():
     sig = changements[(changements.ic_bas > 0) | (changements.ic_haut < 0)]
     print("\nVariations d'écart dont l'IC 95 % exclut 0 :")
     print(sig.round(3).to_string(index=False) if len(sig) else "aucune")
+    vue = intra[(intra.protocole == "lomo") & (intra.metrique == "FPR")]
+    vue = vue.assign(signif=np.where(vue.ic_bas > 0, "+", np.where(vue.ic_haut < 0, "−", "")))
+    print("\nÉcart de FPR à l'intérieur de chaque module, (B) LOMO :")
+    print(vue[["variables", "attribut", "module", "n_groupe_1", "n_groupe_2", "neg_groupe_1", "neg_groupe_2",
+               "ecart", "ic_bas", "ic_haut", "signif"]].round(3).to_string(index=False))
 
 
 if __name__ == "__main__":

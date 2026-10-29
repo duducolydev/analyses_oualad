@@ -6,11 +6,13 @@ Figure T3 — Le classement se transfère, le seuil non (cutoff 25 %, population
 (a) AUC par module : (A) aléatoire et (B) LOMO, variables absolues ; (B) avec
     variables relatives au rang dans la présentation.
 (b) Part d'étudiants signalés (p >= 0,5) : (A), (B) et taux à risque observé.
-(c) Dérive de signalement (B − A, même famille de variables) : modèle brut,
-    recalibré sur 100 étudiants étiquetés du module, variables relatives.
+(c) Remèdes, évalués sur les MÊMES étudiants (ceux non tirés pour Platt) et
+    contre la MÊME référence, le modèle (A) à variables absolues : part
+    signalée − celle de (A), pour le modèle brut, Platt sur 100 étudiants
+    étiquetés (moyenne ± écart-type sur 50 tirages) et les variables relatives.
 
 Lit results/transfer_by_module_c25_active[_relatives].csv et
-results/recalibration_k_c25_active.csv ; écrit figures/[en/]transfer.pdf et .png.
+results/remedes_k_c25.csv (14_remedies.py) ; écrit figures/[en/]transfer.pdf et .png.
 Usage : python src/fig_transfer.py [--lang en]
 """
 from pathlib import Path
@@ -30,15 +32,15 @@ K = 100
 BLEU, ORANGE, AQUA, GRIS = "#2a78d6", "#eb6834", "#1baf7a", "#6b6a66"
 TXT = {
     "fr": {"a": "(a) Classement : AUC", "b": "(b) Seuil : part d'étudiants signalés",
-           "c": "(c) Dérive de signalement (B − A)",
+           "c": "(c) Remèdes : signalés − (A) absolu",
            "A": "(A) Aléatoire, module vu", "B": "(B) LOMO, module non vu",
            "Brel": "(B) LOMO, variables relatives", "obs": "Taux à risque observé",
-           "recal": f"(B) recalibré sur {K} étudiants", "rel": "(B) variables relatives"},
+           "brut": "(B) brut", "recal": f"(B) Platt, {K} étudiants étiquetés", "rel": "(B) variables relatives"},
     "en": {"a": "(a) Ranking: AUC", "b": "(b) Threshold: share flagged",
-           "c": "(c) Flag-rate drift (B − A)",
+           "c": "(c) Remedies: flagged − (A) absolute",
            "A": "(A) Random split, module seen", "B": "(B) LOMO, module unseen",
            "Brel": "(B) LOMO, relative features", "obs": "Observed at-risk rate",
-           "recal": f"(B) recalibrated on {K} students", "rel": "(B) relative features"},
+           "brut": "(B) raw", "recal": f"(B) Platt, {K} labelled students", "rel": "(B) relative features"},
 }
 
 
@@ -48,9 +50,9 @@ def main():
     style()
     a = pd.read_csv(RES / f"transfer_by_module{META}.csv", index_col=0)
     r = pd.read_csv(RES / f"transfer_by_module{META}_relatives.csv", index_col=0)
-    rk = pd.read_csv(RES / f"recalibration_k{META}.csv", header=[0, 1], index_col=[0, 1, 2])
-    sig = rk[("signalement", "mean")].xs(K, level="k").unstack("methode")
-    derive_recal = sig["lomo_recalibre"] - sig["aleatoire"]
+    rk = pd.read_csv(RES / "remedes_k_c25.csv", header=[0, 1], index_col=[0, 1, 2]).xs(K, level="k")
+    derive = rk[("derive_ref", "mean")].unstack("regle")
+    et = rk[("derive_ref", "std")].unstack("regle")
 
     mods = sorted(a.index)[::-1]  # AAA en haut
     y = np.arange(len(mods))
@@ -79,15 +81,16 @@ def main():
     # (c) Dérive de signalement après remèdes
     ax = axes[2]
     h = 0.26
-    series = [(a["derive_signalement"], ORANGE), (derive_recal, AQUA), (r["derive_signalement"], GRIS)]
-    for j, (s, c) in enumerate(series):
-        ax.barh(y + (1 - j) * h, s.loc[mods], height=h - 0.04, color=c, zorder=2)
+    for j, (regle, c) in enumerate([("brut", ORANGE), ("platt", AQUA), ("relatives", GRIS)]):
+        ax.barh(y + (1 - j) * h, derive.loc[mods, regle], height=h - 0.04, color=c, zorder=2,
+                xerr=et.loc[mods, regle] if regle == "platt" else None,
+                error_kw={"elinewidth": 0.8, "ecolor": TEXTE2, "capsize": 0})
     ax.axvline(0, color=TEXTE2, lw=0.8, zorder=3)
     g = list(mods).index("GGG")
-    ax.annotate(f"+{a.loc['GGG', 'derive_signalement']:.2f}", (a.loc["GGG", "derive_signalement"], g + h),
+    ax.annotate(f"+{derive.loc['GGG', 'brut']:.2f}", (derive.loc["GGG", "brut"], g + h),
                 xytext=(3, 0), textcoords="offset points", va="center", fontsize=7, color=TEXTE2)
     ax.set_title(t["c"], loc="left")
-    ax.set_xlim(-0.15, 0.62)
+    ax.set_xlim(-0.25, 0.62)
 
     for ax in axes:
         ax.set_yticks(y, mods)
@@ -100,6 +103,7 @@ def main():
         Line2D([], [], ls="", marker="s", color=ORANGE, mec="white", ms=6, label=t["B"]),
         Line2D([], [], ls="", marker="D", mfc="none", mec=GRIS, mew=1.2, ms=5.5, label=t["Brel"]),
         Line2D([], [], ls="", marker="|", color=TEXTE, ms=8, mew=1.6, label=t["obs"]),
+        plt.Rectangle((0, 0), 1, 1, color=ORANGE, label=t["brut"]),
         plt.Rectangle((0, 0), 1, 1, color=AQUA, label=t["recal"]),
         plt.Rectangle((0, 0), 1, 1, color=GRIS, label=t["rel"]),
     ]

@@ -193,4 +193,35 @@ Cutoff 25 %, population active ; `src/11_seed_variability.py`,
 **À décider** : passer le protocole (B) principal au LOMO sans étudiants
 communs (cohérent avec (A), groupé par étudiant), ce qui demande de relancer
 toute la chaîne (~4 h) ; ou garder le LOMO standard et rapporter D12 en
-robustesse.
+robustesse. → Tranché en D14.
+
+## D14 — LOMO strict, revue cible JLA, étape 2 bis (décidé le 29/10/2026)
+
+**Protocole (B) = LOMO strict** : un étudiant inscrit dans le module testé
+n'est jamais en entraînement (`plis_contexte(..., exclure_communs="id_student")`,
+testé par `tests/test_protocols.py`). Appliqué dans 02, 03, 05, 09, 11. Le LOMO
+standard devient la comparaison de robustesse (`10_overlap_check.py`).
+
+**Revue cible : Journal of Learning Analytics** (gabarit et règles JLA à
+appliquer à l'étape 4).
+
+**Étape 2 bis (revue 3)** :
+1. Remèdes comparés à armes égales (`14_remedies.py`) : toutes les règles (brut,
+   Platt, top-q, variables relatives, et top-q oracle en référence) évaluées sur
+   les MÊMES étudiants (non tirés pour Platt ; ou présentations postérieures pour
+   le plan « pilote ») contre la MÊME référence, le modèle (A) à variables
+   absolues ; plus |signalés − risque|, sans référence de modèle ; écart-type de
+   Platt entre tirages. La recalibration quitte `04` ; la Fig. 2c et le tableau
+   des remèdes lisent cette sortie. Sur les prédictions du LOMO standard (avant
+   relance) : |dérive| brut 0,137, Platt-100 0,058 (±0,038 de part signalée
+   entre tirages), top-q 0,059, relatives 0,043 ; précision 0,618 / 0,624 /
+   0,633 / 0,684. Contre cette référence commune, les variables relatives
+   SOUS-signalent GGG (−0,15) ; mais (A) y sur-signale lui-même (44 % pour un
+   risque de 37 %) : d'où |signalés − risque| (relatives 0,059 = (A) 0,059).
+2. Équité à l'intérieur de chaque module (`07_fairness.py`) : écarts et IC
+   (mêmes tirages), effectifs par groupe (total, positifs, négatifs). Genre,
+   variables absolues : aucun écart de FPR significativement en défaveur des
+   femmes dans un module (3 en leur faveur) ; variables relatives : CCC +0,052
+   [+0,006 ; +0,100] en défaveur des femmes. IMD : FPR plus élevé pour Q1 dans
+   6 modules sur 7 — écart présent DANS les modules, pas un effet de composition.
+   Justification du bootstrap groupé par étudiant écrite dans le script.

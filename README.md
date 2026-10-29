@@ -64,7 +64,7 @@ Décompresser les **7 CSV** (`studentInfo.csv`, `studentRegistration.csv`,
 ## Exécution
 
 **Tout régénérer** (résultats, figures FR/EN, chiffres et tableaux de l'article,
-`paper/main.pdf`) : `python run_all.py` (~3 h ; `--sans-shap` et
+`paper/main.pdf`) : `python run_all.py` (~5 h ; `--sans-shap`, `--sans-graines` et
 `--sans-sequences` réutilisent les résultats SHAP et T5 existants). Les étapes
 détaillées :
 

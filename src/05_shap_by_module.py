@@ -65,7 +65,7 @@ def un_module(df, feats, mod, n_lignes, n_arbres, seed):
     res = []
 
     # Modèle transféré (LOMO)
-    tr = df[df["code_module"] != mod]
+    tr = df[(df["code_module"] != mod) & ~df["id_student"].isin(set(te["id_student"]))]  # LOMO strict (D14)
     m = construire_modele(tr[feats], seed=seed).fit(tr[feats], tr[TARGET].values)
     ech = te.iloc[rng.choice(len(te), min(n_lignes, len(te)), replace=False)]
     res.append(shap_par_variable(m, ech[feats], n_arbres, seed).assign(modele="transfere"))

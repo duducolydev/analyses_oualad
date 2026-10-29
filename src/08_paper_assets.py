@@ -246,42 +246,59 @@ Module & AUC (A) & AUC (B) & Cost & Observed risk & (A) & (B) & AUC & Flagged (\
 
 
 def remedes(t, tr):
-    rk = pd.read_csv(RES / f"recalibration_k{META}.csv", header=[0, 1], index_col=[0, 1, 2])
-    mk = rk.xs("mean", axis=1, level=1).xs(100, level="k")
-    rt = pd.read_csv(RES / f"recalibration_temporelle{META}.csv").set_index(["module", "methode"])
-    derive_k = mk["signalement"].unstack()["lomo_recalibre"] - mk["signalement"].unstack()["aleatoire"]
-    derive_t = (rt["signalement"].unstack()["lomo_recalibre"] - rt["signalement"].unstack()["aleatoire"])
-    m("resDriftRecalK", f3(derive_k.abs().mean()))
-    m("resDriftRecalT", f3(derive_t.abs().mean()))
-    m("resGGGDriftRecalK", signe(derive_k["GGG"], 2))
-    m("resGGGPrecRecalK", f2(mk.loc["GGG", "precision"]["lomo_recalibre"]))
-    m("resGGGPrecRecalT", f2(rt.loc[("GGG", "lomo_recalibre"), "precision"]))
-    m("resGGGRecRecalT", f2(rt.loc[("GGG", "lomo_recalibre"), "rappel"]))
-    m("resFoneRecalK", f3(mk["f1"].unstack()["lomo_recalibre"].mean()))
-    m("resFoneRawK", f3(mk["f1"].unstack()["lomo_brut"].mean()))
+    """Remèdes comparés sur les mêmes étudiants, contre une référence commune
+    (modèle (A) à variables absolues) — 14_remedies.py, plans « k = 100 » et « pilote »."""
+    rk = pd.read_csv(RES / "remedes_k_c25.csv", header=[0, 1], index_col=[0, 1, 2]).xs(100, level="k")
+    mk, sk = rk.xs("mean", axis=1, level=1), rk.xs("std", axis=1, level=1)
+    pil = pd.read_csv(RES / "remedes_pilote_c25.csv").set_index(["module", "regle"])
+    d, prec = mk["derive_ref"].unstack("regle"), mk["precision"].unstack("regle")
+    ecr, f1 = mk["ecart_risque"].unstack("regle"), mk["F1"].unstack("regle")
+    sd = sk["derive_ref"].unstack("regle")
+    dp = pil["derive_ref"].unstack("regle")
+    m("resDriftRecalK", f3(d["platt"].abs().mean()))
+    m("resDriftRecalT", f3(dp["platt"].abs().mean()))
+    m("resDriftRawCommon", f3(d["brut"].abs().mean()))
+    m("resDriftRelCommon", f3(d["relatives"].abs().mean()))
+    m("resDriftTopQ", f3(d["top_q"].abs().mean()))
+    m("resDriftRelPilot", f3(dp["relatives"].abs().mean()))
+    m("resGGGDriftRecalK", signe(d.loc["GGG", "platt"], 2))
+    m("resGGGDriftRelCommon", signe(d.loc["GGG", "relatives"], 2))
+    m("resGGGPrecRecalK", f2(prec.loc["GGG", "platt"]))
+    m("resGGGPrecRecalT", f2(pil.loc[("GGG", "platt"), "precision"]))
+    m("resGGGRecRecalT", f2(pil.loc[("GGG", "platt"), "rappel"]))
+    for regle, nom in [("brut", "Raw"), ("platt", "Recal"), ("top_q", "TopQ"), ("relatives", "Rel")]:
+        m(f"resFone{nom}K", f3(f1[regle].mean()))
+        m(f"resPrec{nom}K", f3(prec[regle].mean()))
+        m(f"resPrec{nom}Pilot", f3(pil.xs(regle, level="regle")["precision"].mean()))
+    for regle, nom in [("brut", "Raw"), ("platt", "Recal"), ("top_q", "TopQ"), ("top_q_oracle", "TopQOracle"),
+                       ("relatives", "Rel"), ("reference_A", "RefA")]:
+        m(f"resGapRisk{nom}", f3(ecr[regle].mean()))
+    m("resPlattSdFlag", f3(sk["signalement"].unstack("regle")["platt"].mean()))
+
+    regles = ["brut", "platt", "top_q", "relatives"]
     corps = []
-    for mod in t.index:
-        corps.append(f"{mod} & {signe(t.loc[mod, 'derive_signalement'], 2)} & {signe(derive_k[mod], 2)} & "
-                     f"{signe(derive_t[mod], 2)} & {signe(tr.loc[mod, 'derive_signalement'], 2)} & "
-                     f"{f2(t.loc[mod, 'precision_lomo'])} & {f2(mk.loc[mod, 'precision']['lomo_recalibre'])} & "
-                     f"{f2(rt.loc[(mod, 'lomo_recalibre'), 'precision'])} & {f2(tr.loc[mod, 'precision_lomo'])} \\\\")
-    moy = (f"Mean $|\\cdot|$ / mean & {f2(t.derive_signalement.abs().mean())} & {f2(derive_k.abs().mean())} & "
-           f"{f2(derive_t.abs().mean())} & {f2(tr.derive_signalement.abs().mean())} & "
-           f"{f2(t.precision_lomo.mean())} & {f2(mk['precision'].unstack()['lomo_recalibre'].mean())} & "
-           f"{f2(rt.xs('lomo_recalibre', level='methode')['precision'].mean())} & {f2(tr.precision_lomo.mean())} \\\\")
+    for mod in d.index:
+        der = [signe(d.loc[mod, r], 2) + (f" ({sd.loc[mod, r]:.2f})" if r == "platt" else "") for r in regles]
+        corps.append(f"{mod} & " + " & ".join(der) + " & " + " & ".join(f2(prec.loc[mod, r]) for r in regles) + " \\\\")
+    moy = (r"Mean $|\cdot|$ / mean & " + " & ".join(f2(d[r].abs().mean()) for r in regles) + " & "
+           + " & ".join(f2(prec[r].mean()) for r in regles) + " \\\\")
+    risque = ("Mean $|$flagged $-$ risk$|$ & " + " & ".join(f2(ecr[r].mean()) for r in regles)
+              + r" & \multicolumn{4}{c}{(A) absolute: " + f2(ecr["reference_A"].mean()) + "} \\\\")
     ecrire("tab_remedies.tex", rf"""\begin{{table*}}[t]
 \centering
-\caption{{Flag-rate drift (B) $-$ (A) and precision of the transferred model under the two remedies (25\% cut-off). Platt-$k$: Platt recalibration on $k=100$ randomly drawn labelled students of the target module (mean of 50 draws, evaluated on the remaining students). Platt-pilot: recalibration on the first presentation of the module, evaluated on the later ones (drift measured against (A) on the same students). Relative: context-relative features, no labels.}}
+\caption{{Remedies compared on the same students and against the same reference (25\% cut-off). For each module, all rules are evaluated on the students not drawn for Platt recalibration ($k=100$ labelled students of the target module, mean of 50 draws; standard deviation across draws in parentheses). Drift: share flagged minus that of the absolute-feature model trained with the module seen, (A). Raw: absolute features, threshold 0.5. Top-$q$: in each cohort, the $q$ students with the highest scores, $q$ being the at-risk rate of the six training modules. Relative: context-relative features, threshold 0.5. Platt and the raw model use absolute features; only Platt uses labels of the target module.}}
 \label{{tab:remedies}}
+\footnotesize
 \begin{{tabular}}{{@{{}}lcccccccc@{{}}}}
 \toprule
- & \multicolumn{{4}}{{c}}{{Flag-rate drift}} & \multicolumn{{4}}{{c}}{{Precision of (B)}} \\
+ & \multicolumn{{4}}{{c}}{{Flag-rate drift vs (A)}} & \multicolumn{{4}}{{c}}{{Precision}} \\
 \cmidrule(lr){{2-5}}\cmidrule(l){{6-9}}
-Module & Raw & Platt-$k$ & Platt-pilot & Relative & Raw & Platt-$k$ & Platt-pilot & Relative \\
+Module & Raw & Platt-$k$ & Top-$q$ & Relative & Raw & Platt-$k$ & Top-$q$ & Relative \\
 \midrule
 {chr(10).join(corps)}
 \midrule
 {moy}
+{risque}
 \bottomrule
 \end{{tabular}}
 \end{{table*}}
@@ -378,9 +395,19 @@ def equite():
     partF = p.groupby("code_module").gender.apply(lambda s: (s == "F").mean())
     m("resShareFemaleBBB", pct(partF["BBB"], 0))
     m("resShareFemaleGGG", pct(partF["GGG"], 0))
-    neg = p[p.at_risk == 0].assign(f=lambda d: d.p_lomo >= 0.5)
-    t = neg.groupby(["code_module", "gender"]).f.mean().unstack()
-    m("resFprGenderWithinMax", signe((t.F - t.M).max()))
+    intra = pd.read_csv(RES / f"fairness_within_module{META}.csv")
+    intra = intra[(intra.protocole == "lomo") & (intra.metrique == "FPR")].set_index(["variables", "attribut", "module"])
+    ga = intra.xs(("absolues", "genre"), level=["variables", "attribut"])
+    m("resFprGenderWithinMax", signe(ga.ecart.max()))
+    m("resNGenderWithinNeg", str(int((ga.ic_haut < 0).sum())))
+    m("resNGenderWithinPos", str(int((ga.ic_bas > 0).sum())))
+    gr = intra.xs(("relatives", "genre"), level=["variables", "attribut"])
+    m("resNGenderWithinPosRel", str(int((gr.ic_bas > 0).sum())))
+    r = gr.loc["CCC"]
+    m("resFprGenderCCCRel", signe(r.ecart))
+    m("resFprGenderCCCRelCI", f"[{signe(r.ic_bas)}, {signe(r.ic_haut)}]")
+    ia = intra.xs(("absolues", "imd"), level=["variables", "attribut"])
+    m("resNImdWithinPos", str(int((ia.ic_bas > 0).sum())))
     fr = pd.read_csv(RES / f"fairness_groups{META}.csv")
     q = fr[(fr.variables == "absolues") & (fr.protocole == "aleatoire") & (fr.attribut == "imd")].set_index("groupe")
     m("resRiskQOne", pct(q.loc["Q1", "taux_risque"], 0))

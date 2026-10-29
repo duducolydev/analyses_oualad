@@ -4,12 +4,14 @@
 Régénère TOUS les résultats, figures, tableaux et chiffres de l'article depuis
 les 7 CSV OULAD placés dans data/OULAD/, puis compile paper/main.pdf.
 
-Durée indicative (16 Go de RAM, 16 cœurs) : ~3 h, dont ~40 min pour SHAP et
-~1 h 30 pour les modèles séquentiels (T5).
+Protocole (B) : LOMO strict, sans étudiants communs (D14).
+Durée indicative (16 Go de RAM, 16 cœurs) : ~5 h, dont ~40 min pour SHAP,
+~1 h 30 pour les modèles séquentiels (T5) et ~45 min pour les 10 graines.
 
   python run_all.py                    tout
   python run_all.py --sans-shap        réutilise les résultats SHAP existants
   python run_all.py --sans-sequences   réutilise les résultats T5 existants
+  python run_all.py --sans-graines     réutilise les relances multi-graines existantes
   python run_all.py --sans-latex       ne compile pas l'article
 
 Seule exception : results/reference_rf_c25.txt, sortie des scripts initiaux
@@ -28,7 +30,7 @@ PY = sys.executable
 DATA = ["--data", "data/OULAD"]
 
 
-def etapes(sans_shap: bool, sans_sequences: bool):
+def etapes(sans_shap: bool, sans_sequences: bool, sans_graines: bool):
     e = [("Tests anti-fuite", [PY, "-m", "pytest", "-q", "tests"])]
     # T2 / T3 : courbes et prédictions (5 cutoffs)
     e += [("Courbe, variables absolues", [PY, "src/03_early_curve.py", *DATA]),
@@ -51,6 +53,13 @@ def etapes(sans_shap: bool, sans_sequences: bool):
     # T5
     if not sans_sequences:
         e.append(("Modèles séquentiels et boosting", [PY, "src/09_sequence_models.py", *DATA]))
+    # Révision : robustesse et remèdes (D12–D14)
+    e.append(("LOMO standard (comparaison au strict)", [PY, "src/10_overlap_check.py", *DATA]))
+    if not sans_graines:
+        e.append(("Variabilité due à la graine", [PY, "src/11_seed_variability.py", *DATA]))
+    e.append(("Incertitude, calibration, seuil", [PY, "src/12_robustness.py"]))
+    e.append(("Contrôle du chevauchement", [PY, "src/13_overlap_control.py", *DATA]))
+    e.append(("Remèdes à armes égales", [PY, "src/14_remedies.py"]))
     # Figures (thèse en français, article en anglais) puis chiffres de l'article
     for f in ["early_curve", "transfer", "shap", "fairness", "sequence"]:
         for lang in ["fr", "en"]:
@@ -63,6 +72,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sans-shap", action="store_true")
     ap.add_argument("--sans-sequences", action="store_true")
+    ap.add_argument("--sans-graines", action="store_true")
     ap.add_argument("--sans-latex", action="store_true")
     args = ap.parse_args()
 
@@ -70,7 +80,7 @@ def main():
         sys.exit("Données absentes : placer les 7 CSV OULAD dans data/OULAD/ (voir README).")
     env = {**os.environ, "PYTHONUTF8": "1"}
     debut = time.time()
-    for nom, cmd in etapes(args.sans_shap, args.sans_sequences):
+    for nom, cmd in etapes(args.sans_shap, args.sans_sequences, args.sans_graines):
         t = time.time()
         print(f"\n=== {nom}", flush=True)
         r = subprocess.run(cmd, cwd=RACINE, env=env)

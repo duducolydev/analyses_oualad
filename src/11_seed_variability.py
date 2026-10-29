@@ -45,7 +45,8 @@ def main():
         for s in args.seeds:
             t = time.time()
             _, oof = eval_aleatoire(df, feats, TARGET, "id_student", "rf", seed=s, return_oof=True)
-            _, pb = eval_contexte_exclu(df, feats, TARGET, "code_module", "rf", seed=s, return_pred=True)
+            _, pb = eval_contexte_exclu(df, feats, TARGET, "code_module", "rf", seed=s, return_pred=True,
+                                         exclure_communs="id_student")  # LOMO strict (D14)
             for proto, p in [("aleatoire", oof), ("lomo", pb)]:
                 for mod in sorted(df.code_module.unique()):
                     m = df.code_module.values == mod

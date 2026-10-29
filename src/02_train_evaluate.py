@@ -64,7 +64,8 @@ def main():
     print(a.round(3).to_string(), "\n")
 
     print("=== (B) Leave-one-module-out (généralisation à un module non vu) ===")
-    b = eval_contexte_exclu(df, feats, TARGET, "code_module", args.model)
+    b = eval_contexte_exclu(df, feats, TARGET, "code_module", args.model,
+                            exclure_communs="id_student")
     b = b[["AUC", "Rappel", "Précision", "F1"]].astype(float)
     print(b.round(3).to_string())
     print("\nMoyenne LOMO :")

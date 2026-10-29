@@ -94,20 +94,28 @@ def recalibrer(p_cal, y_cal, p_cible):
     return lr.predict_proba(logit(p_cible)[:, None])[:, 1]
 
 
+def plis_contexte(df, context_col, exclure_communs=None):
+    """Découpage du protocole (B) : pour chaque contexte, (contexte, masque
+    d'entraînement, masque de test). exclure_communs (nom de colonne, ex.
+    id_student) : retire de l'entraînement les individus présents dans le
+    contexte testé — protocole strict, comme (A) qui est groupé par individu."""
+    ctx_col = df[context_col].values
+    for ctx in sorted(df[context_col].unique()):
+        te = ctx_col == ctx
+        tr = ~te
+        if exclure_communs is not None:
+            tr &= ~df[exclure_communs].isin(set(df.loc[te, exclure_communs])).values
+        yield ctx, tr, te
+
+
 def eval_contexte_exclu(df, features, target, context_col, kind="rf",
                         seed=SEED, return_pred=False, exclure_communs=None):
     """(B) Une ligne de métriques par contexte laissé de côté (index = contexte) ;
     avec return_pred, renvoie aussi la prédiction de chaque ligne par le modèle
-    qui n'a pas vu son contexte. exclure_communs (nom de colonne, ex. id_student) :
-    retire de l'entraînement les individus présents dans le contexte testé, pour
-    qu'aucun individu ne soit des deux côtés (comme le protocole (A))."""
+    qui n'a pas vu son contexte. exclure_communs : voir plis_contexte."""
     res, pred = {}, np.full(len(df), np.nan)
-    ctx_col = df[context_col].values
-    for ctx in sorted(df[context_col].unique()):
-        te_mask = ctx_col == ctx
-        tr, te = df[~te_mask], df[te_mask]
-        if exclure_communs is not None:
-            tr = tr[~tr[exclure_communs].isin(set(te[exclure_communs]))]
+    for ctx, tr_mask, te_mask in plis_contexte(df, context_col, exclure_communs):
+        tr, te = df[tr_mask], df[te_mask]
         m = construire_modele(tr[features], kind, seed).fit(tr[features], tr[target].values)
         pred[te_mask] = m.predict_proba(te[features])[:, 1]
         res[ctx] = scores(te[target].values, pred[te_mask])
