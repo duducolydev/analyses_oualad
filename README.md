@@ -93,3 +93,9 @@ of that first version, used as the starting point of the methodological audit.
 See `CITATION.cff`. The code is archived on Zenodo:
 <https://doi.org/10.5281/zenodo.24023694> (this DOI always resolves to the
 latest version).
+
+## License
+
+The code is released under the MIT License (see `LICENSE`). OULAD itself is
+distributed by the Open University under CC-BY 4.0 and is not covered by this
+license.
