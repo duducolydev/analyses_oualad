@@ -531,6 +531,163 @@ Features & Model & AUC (A) & AUC (B) & Cost & Drift & GGG \\
 """)
 
 
+def revision():
+    """Chiffres et tableaux de la révision (D12–D15) : incertitude, calibration,
+    seuil, chevauchement, normalisations, taille de cohorte."""
+    # Coûts par module (remplace des valeurs écrites en dur)
+    t = pd.read_csv(RES / f"transfer_by_module{META}.csv", index_col=0)
+    m("resNCostSmall", str(int((t.cout_transfert_auc < 0.015).sum())))
+    m("resAAACost", f3(t.loc["AAA", "cout_transfert_auc"]))
+    m("resGGGCost", f3(t.loc["GGG", "cout_transfert_auc"]))
+
+    # 1. IC bootstrap apparié
+    b = pd.read_csv(RES / "robustesse_bootstrap_c25.csv").set_index(["quantite", "comparaison"])
+    for q, nom in [("AUC (B)", "AucB"), ("Coût", "Cost"), ("|Dérive|", "Drift")]:
+        r = b.loc[(q, "relatives − absolues")]
+        m(f"resCIDiff{nom}", signe(r.estimation))
+        m(f"resCIDiff{nom}CI", f"[{signe(r.ic_bas)}, {signe(r.ic_haut)}]")
+        for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+            r = b.loc[(q, v)]
+            m(f"resCI{nom}{vn}", f"[{f3(r.ic_bas)}, {f3(r.ic_haut)}]")
+
+    # 2. Niveau module
+    tm = pd.read_csv(RES / "robustesse_modules_c25.csv", header=[0, 1], index_col=0)
+    for q, qn in [("|Dérive|", "Drift"), ("Coût", "Cost")]:
+        for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+            m(f"resCCC{qn}{vn}", f3(tm.loc["CCC", (q, v)]))
+    w = pd.read_csv(RES / "robustesse_wilcoxon_c25.csv").set_index("quantite")
+    for q, nom in [("AUC (B)", "Auc"), ("|Dérive|", "Drift")]:
+        m(f"resNImproved{nom}", str(int(w.loc[q, "modules_ameliores"])))
+        m(f"resWilcoxon{nom}", f"{w.loc[q, 'wilcoxon_p']:.3f}")
+
+    # 3. Graines
+    g = pd.read_csv(RES / "robustesse_graines_c25.csv")
+    m("resNSeeds", str(pd.read_csv(RES / "seed_variability_c25.csv").graine.nunique()))
+    m("resSeedSdAucMin", f3(g.auc_B_et.min()))
+    m("resSeedSdAucMax", f3(g.auc_B_et.max()))
+    m("resSeedSdDriftMax", f3(g.derive_et.max()))
+    gd = pd.read_csv(RES / "robustesse_graines_diff_c25.csv", index_col=0)
+    for mod in ["CCC", "EEE", "AAA", "BBB"]:
+        m(f"resRelMinusAbs{mod}", signe(gd.loc[mod, "rel_moins_abs_auc_B_mean"]))
+        m(f"resRelMinusAbs{mod}Sd", f3(gd.loc[mod, "rel_moins_abs_auc_B_std"]))
+
+    # 4. Calibration : (B) − (A), moyenne des |écarts| sur les modules
+    c = pd.read_csv(RES / "robustesse_calibration_c25.csv")
+    p = c.pivot_table(index=["variables", "module"], columns="protocole", values=["brier", "citl", "p_moyen", "pente"])
+    lignes = []
+    for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+        ligne = {}
+        for q, qn in [("brier", "Brier"), ("citl", "Citl"), ("p_moyen", "Pmean"), ("pente", "Slope")]:
+            d = (p[(q, "lomo")] - p[(q, "aleatoire")]).xs(v)
+            m(f"resCal{qn}{vn}", f3(d.abs().mean()) if q != "citl" else f2(d.abs().mean()))
+            m(f"resCal{qn}GGG{vn}", signe(d["GGG"], 3 if q != "citl" else 2))
+            ligne[qn] = (d.abs().mean(), d["GGG"])
+        lignes.append((v, ligne))
+    corps = []
+    for v, ligne in lignes:
+        lib = "Absolute" if v == "absolues" else "Relative"
+        corps.append(f"{lib} & " + " & ".join(f"{x:.3f} & {signe(y, 3)}" for x, y in
+                                               [ligne[k] for k in ["Brier", "Citl", "Pmean", "Slope"]]) + r" \\")
+    ecrire("tab_calibration.tex", r"""\begin{table*}[t]
+\centering
+\caption{Calibration of the transferred model at the 25\% cut-off: difference between protocol (B) and protocol (A) on the same students, as the mean absolute difference over modules and for module GGG. Brier score; calibration-in-the-large (intercept of a logistic recalibration with $\mathrm{logit}(\hat{p})$ as offset); mean predicted risk; calibration slope. With balanced class weights the probabilities are not calibrated even in (A), so the transfer effect is the difference (B) $-$ (A).}
+\label{tab:calibration}
+\footnotesize
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{Brier} & \multicolumn{2}{c}{Calibration-in-the-large} & \multicolumn{2}{c}{Mean predicted risk} & \multicolumn{2}{c}{Slope} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Features & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG \\
+\midrule
+""" + "\n".join(corps) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+
+    # 5. Seuil
+    s = pd.read_csv(RES / "robustesse_seuils_c25.csv")
+    num = s[s.seuil != "score moyen"].assign(seuil=lambda x: x.seuil.astype(float))
+    for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+        x = num[num.variables == v]
+        m(f"resThrDrift{vn}Min", f3(x.derive_moy_abs.min()))
+        m(f"resThrDrift{vn}Max", f3(x.derive_moy_abs.max()))
+        sm = s[(s.variables == v) & (s.seuil == "score moyen")].iloc[0]
+        m(f"resScoreShift{vn}", f3(sm.derive_moy_abs))
+        m(f"resScoreShiftGGG{vn}", signe(sm.derive_GGG, 2))
+    x = num[num.variables == "absolues"]
+    m("resThrGGGAbsMin", signe(x.derive_GGG.min(), 2))
+    m("resThrGGGAbsMax", signe(x.derive_GGG.max(), 2))
+
+    # 6. Chevauchement : LOMO strict vs standard, contrôle
+    o = pd.read_csv(RES / "overlap_check.csv")
+    o25 = o[o.cutoff == 0.25]
+    m("resOverlapShareMax", pct(o25.part_chevauchement.max(), 1))
+    m("resOverlapShareMaxMod", o25.loc[o25.part_chevauchement.idxmax(), "module"])
+    m("resOverlapStudents", pct(_part_multi_modules(), 1))
+    diff = (o.groupby(["cutoff", "variables"]).auc_B_standard.mean() - o.groupby(["cutoff", "variables"]).auc_B_strict.mean())
+    m("resOverlapMeanDiffMax", f3(diff.abs().max()))
+    ctl = pd.read_csv(RES / "overlap_control_c25.csv")
+    r = ctl.pivot_table(index=["variables", "module", "graine"], columns="condition", values="auc_B")
+    eff = pd.DataFrame({"communs": r.communs - r.standard, "hasard": r.hasard - r.standard}).groupby(
+        level=["variables", "module"]).mean()
+    for mod in ["CCC", "EEE"]:
+        m(f"resOverlapEffect{mod}", signe(eff.loc[("absolues", mod), "communs"]))
+        m(f"resOverlapRandom{mod}", signe(eff.loc[("absolues", mod), "hasard"]))
+
+    # 7. Normalisations
+    nz = pd.read_csv(RES / "normalisations.csv")
+    nz["cout"] = nz.auc_A - nz.auc_B
+    nz["derive_meme"] = (nz.signal_B - nz.signal_A).abs()
+    nz["ecart_risque"] = (nz.signal_B - nz.risque).abs()
+    moy = nz[nz.cutoff == 0.25].groupby("variante")[["auc_A", "auc_B", "cout", "derive_meme", "ecart_risque",
+                                                    "precision_B", "F1_B"]].mean()
+    for v, vn in [("zscore", "Zscore"), ("robuste", "Robust"), ("rang", "Rank")]:
+        m(f"resNorm{vn}AucB", f3(moy.loc[v, "auc_B"]))
+        m(f"resNorm{vn}Drift", f3(moy.loc[v, "derive_meme"]))
+    bmod = nz.pivot_table(index=["cutoff", "module"], columns="variante", values="auc_B")
+    ecarts = (bmod[["rang", "zscore", "robuste"]].max(axis=1) - bmod[["rang", "zscore", "robuste"]].min(axis=1))
+    moy_c = nz.groupby(["cutoff", "variante"]).auc_B.mean().unstack()
+    m("resNormMaxSpread", f3((moy_c[["rang", "zscore", "robuste"]].max(axis=1)
+                              - moy_c[["rang", "zscore", "robuste"]].min(axis=1)).max()))
+
+    # 8. Taille de cohorte
+    cs = pd.read_csv(RES / "cohort_size.csv")
+    cs["abs_ecart"] = cs.ecart_au_complet.abs()
+    res = cs.groupby(["taille", "module"])[["AUC", "abs_ecart", "ecart_risque"]].mean().groupby(level="taille").mean()
+    for n, nn in [("10", "Ten"), ("20", "Twenty"), ("50", "Fifty"), ("100", "Hundred"), ("complet", "Full")]:
+        m(f"resCohortAuc{nn}", f3(res.loc[n, "AUC"]))
+        m(f"resCohortFlag{nn}", f3(res.loc[n, "abs_ecart"]))
+
+    noms = {"absolues": "Absolute values", "rang": "Percentile rank", "zscore": "z-score (winsorized 1--99\\%)",
+            "robuste": "Robust (median, IQR)"}
+    corps = [f"{noms[v]} & {f3(r.auc_A)} & {f3(r.auc_B)} & {signe(r.cout)} & {f3(r.derive_meme)} & "
+             f"{f3(r.ecart_risque)} & {f3(r.precision_B)} & {f3(r.F1_B)} \\\\"
+             for v, r in moy.reindex(["absolues", "rang", "zscore", "robuste"]).iterrows()]
+    taille = "; ".join(f"{n}: {f3(res.loc[n, 'AUC'])}" for n in ["10", "20", "50", "100", "200"])
+    ecrire("tab_normalisation.tex", r"""\begin{table*}[t]
+\centering
+\caption{Which cohort normalization, and how large a cohort? Top: normalization of the eight engagement and early-assessment features within each presentation (25\% cut-off, LOMO strict, means over modules). Drift: mean absolute flag-rate drift (B) $-$ (A) of the same variant; $|$flagged $-$ risk$|$: distance between the share flagged in (B) and the observed at-risk rate. Bottom: AUC (B) of the rank model when ranks are computed in random sub-cohorts of $n$ students of the target module (5 random partitions); with the whole presentation: """ + f3(res.loc["complet", "AUC"]) + r""".}
+\label{tab:normalisation}
+\footnotesize
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+Normalization & AUC (A) & AUC (B) & Cost & Drift & $|$flagged $-$ risk$|$ & Precision (B) & F1 (B) \\
+\midrule
+""" + "\n".join(corps) + r"""
+\midrule
+\multicolumn{8}{@{}l}{Cohort size $n$ (AUC (B)) --- """ + taille + r"""} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+
+
+def _part_multi_modules():
+    p = pd.read_parquet(RES / "preds" / "preds_rf_active_c25.parquet")
+    return (p.groupby("id_student").code_module.nunique() > 1).mean()
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     tables = charger(Path("data/OULAD"), Path("data/cache"))
@@ -547,10 +704,11 @@ def main():
     equite()
     cible()
     sequence()
+    revision()
     lignes = ["% Généré par src/08_paper_assets.py — ne pas modifier à la main."]
     lignes += [f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in sorted(MACROS.items())]
     ecrire("macros.tex", "\n".join(lignes) + "\n")
-    print(f"{len(MACROS)} macros et 8 tableaux écrits dans {OUT}/")
+    print(f"{len(MACROS)} macros et 10 tableaux écrits dans {OUT}/")
 
 
 if __name__ == "__main__":

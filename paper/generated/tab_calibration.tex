@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\caption{Calibration of the transferred model at the 25\% cut-off: difference between protocol (B) and protocol (A) on the same students, as the mean absolute difference over modules and for module GGG. Brier score; calibration-in-the-large (intercept of a logistic recalibration with $\mathrm{logit}(\hat{p})$ as offset); mean predicted risk; calibration slope. With balanced class weights the probabilities are not calibrated even in (A), so the transfer effect is the difference (B) $-$ (A).}
+\label{tab:calibration}
+\footnotesize
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{Brier} & \multicolumn{2}{c}{Calibration-in-the-large} & \multicolumn{2}{c}{Mean predicted risk} & \multicolumn{2}{c}{Slope} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Features & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG \\
+\midrule
+Absolute & 0.039 & +0.180 & 0.419 & $-$1.834 & 0.075 & +0.298 & 0.170 & $-$0.321 \\
+Relative & 0.006 & +0.004 & 0.079 & $-$0.061 & 0.015 & +0.011 & 0.077 & $-$0.094 \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -251,3 +251,19 @@ module testé, 5 découpages) : AUC (B) 0,778 / 0,793 / 0,802 / 0,805 / 0,806 /
 signalée au cas complet 0,043 / 0,018 / 0,005 / 0,004 / 0,003. Les rangs sont
 fiables à partir d'environ 50 étudiants ; en dessous de 20, le gain se dégrade
 nettement (n = 10 : AUC sous celle des variables absolues, 0,787).
+
+## D16 — Étape 4 : contenu de l'article mis à jour (06/11/2026)
+
+Format IEEE conservé (le passage au gabarit JLA est reporté, décision de
+Doudou). `paper/main.tex` réécrit pour intégrer D12–D15 et les trois
+relectures : titre « Early At-Risk Prediction in Unseen Courses » (cible
+composite), résumé et introduction distinguant trois niveaux d'affirmation
+(gains établis sur 7 modules ; interprétation étayée ; transfert inter-
+institutions non testé) ; protocole LOMO strict ; sections nouvelles
+« calibration, pas seulement seuil » (tableau de calibration, seuils 0,3–0,7),
+« remèdes sur les mêmes étudiants », « quelle normalisation, quelle taille de
+cohorte » (tableau), « incertitude et hétérogénéité » (IC, Wilcoxon, graines,
+CCC, protocole strict vs standard) ; équité réécrite (« atténue », intra-module,
+IMD présent dans les modules) ; recommandation sur l'usage des alertes ;
+positionnement vis-à-vis d'AdaBN et Tent ; URL du dépôt. Aucun chiffre de
+résultat en dur : 257 macros générées par `src/08_paper_assets.py`.
