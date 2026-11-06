@@ -114,8 +114,11 @@ def main():
             print("\n=== Compilation de l'article", flush=True)
             try:
                 # Délai : MiKTeX peut attendre en silence l'installation d'un paquet manquant.
-                r = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
-                                   cwd=RACINE / "paper", stdout=subprocess.DEVNULL, timeout=600)
+                for doc in ["main.tex", "supplementary.tex"]:
+                    r = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", doc],
+                                       cwd=RACINE / "paper", stdout=subprocess.DEVNULL, timeout=600)
+                    if r.returncode != 0:
+                        break
             except subprocess.TimeoutExpired:
                 sys.exit("ÉCHEC : compilation LaTeX bloquée (paquet MiKTeX manquant ? essayer "
                          "« pdflatex --disable-installer main.tex » dans paper/ pour le nommer)")

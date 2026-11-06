@@ -284,10 +284,10 @@ def remedes(t, tr):
            + " & ".join(f2(prec[r].mean()) for r in regles) + " \\\\")
     risque = ("Mean $|$flagged $-$ risk$|$ & " + " & ".join(f2(ecr[r].mean()) for r in regles)
               + r" & \multicolumn{4}{c}{(A) absolute: " + f2(ecr["reference_A"].mean()) + "} \\\\")
-    ecrire("tab_remedies.tex", rf"""\begin{{table*}}[t]
+    ecrire("tab_s_remedies.tex", rf"""\begin{{table*}}[!ht]
 \centering
 \caption{{Remedies compared on the same students and against the same reference (25\% cut-off). For each module, all rules are evaluated on the students not drawn for Platt recalibration ($k=100$ labelled students of the target module, mean of 50 draws; standard deviation across draws in parentheses). Drift: share flagged minus that of the absolute-feature model trained with the module seen, (A). Raw: absolute features, threshold 0.5. Top-$q$: in each cohort, the $q$ students with the highest scores, $q$ being the at-risk rate of the six training modules. Relative: context-relative features, threshold 0.5. Platt and the raw model use absolute features; only Platt uses labels of the target module.}}
-\label{{tab:remedies}}
+\label{{tab:s-remedies}}
 \footnotesize
 \begin{{tabular}}{{@{{}}lcccccccc@{{}}}}
 \toprule
@@ -667,16 +667,14 @@ Features & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG & mean $|\Delta|$ & GGG
     taille = "; ".join(f"{n}: {f3(res.loc[n, 'AUC'])}" for n in ["10", "20", "50", "100", "200"])
     ecrire("tab_normalisation.tex", r"""\begin{table*}[t]
 \centering
-\caption{Which cohort normalization, and how large a cohort? Top: normalization of the eight engagement and early-assessment features within each presentation (25\% cut-off, LOMO strict, means over modules). Drift: mean absolute flag-rate drift (B) $-$ (A) of the same variant; $|$flagged $-$ risk$|$: distance between the share flagged in (B) and the observed at-risk rate. Bottom: AUC (B) of the rank model when ranks are computed in random sub-cohorts of $n$ students of the target module (5 random partitions); with the whole presentation: """ + f3(res.loc["complet", "AUC"]) + r""".}
+\caption{Which cohort normalization? The eight engagement and early-assessment features are normalized within each presentation (weighted forest, 25\% cut-off, LOMO strict, means over modules). $|\Delta^{\mathrm{same}}|$: mean absolute flag-rate drift (B) $-$ (A) of the same variant; $|$flagged $-$ risk$|$: distance between the share flagged in (B) and the observed at-risk rate.}
 \label{tab:normalisation}
 \footnotesize
 \begin{tabular}{@{}lccccccc@{}}
 \toprule
-Normalization & AUC (A) & AUC (B) & Cost & Drift & $|$flagged $-$ risk$|$ & Precision (B) & F1 (B) \\
+Normalization & AUC (A) & AUC (B) & Cost & $|\Delta^{\mathrm{same}}|$ & $|$flagged $-$ risk$|$ & Precision (B) & F1 (B) \\
 \midrule
 """ + "\n".join(corps) + r"""
-\midrule
-\multicolumn{8}{@{}l}{Cohort size $n$ (AUC (B)) --- """ + taille + r"""} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -686,6 +684,208 @@ Normalization & AUC (A) & AUC (B) & Cost & Drift & $|$flagged $-$ risk$|$ & Prec
 def _part_multi_modules():
     p = pd.read_parquet(RES / "preds" / "preds_rf_active_c25.parquet")
     return (p.groupby("id_student").code_module.nunique() > 1).mean()
+
+
+def relectures():
+    """Relectures R1/R2 (D17) : baselines, modèles, AP, taille, équité, cohortes,
+    CCC/BBB ; tableaux du corps (remèdes par règle, familles de modèles) et du
+    matériel supplémentaire (tab_s_*)."""
+    from sklearn.metrics import roc_auc_score
+    # --- Remèdes : une ligne par règle, plans k = 100 et pilote ---
+    rk = pd.read_csv(RES / "remedes_k_c25.csv", header=[0, 1], index_col=[0, 1, 2]).xs(100, level="k")
+    mk, sk = rk.xs("mean", axis=1, level=1), rk.xs("std", axis=1, level=1)
+    pil = pd.read_csv(RES / "remedes_pilote_c25.csv")
+    pil["abs_derive"] = pil.derive_ref.abs()
+    mk = mk.assign(abs_derive=mk.derive_ref.abs())
+    k_moy = mk.groupby(level="regle")[["abs_derive", "ecart_risque", "precision", "rappel", "F1"]].mean()
+    p_moy = pil.groupby("regle")[["abs_derive", "ecart_risque", "precision", "rappel", "F1"]].mean()
+    sd_sig = sk["signalement"].groupby(level="regle").mean()
+    for regle, nom in [("em_topq", "Em"), ("intercept", "Icpt")]:
+        m(f"res{nom}Drift", f3(k_moy.loc[regle, "abs_derive"]))
+        m(f"res{nom}GapRisk", f3(k_moy.loc[regle, "ecart_risque"]))
+        m(f"res{nom}Prec", f3(k_moy.loc[regle, "precision"]))
+        m(f"res{nom}Fone", f3(k_moy.loc[regle, "F1"]))
+    m("resIcptSdFlag", f3(sd_sig["intercept"]))
+    ggg = mk.xs("GGG", level="module")
+    m("resEmGGGFlag", pct(rk[("signalement", "mean")].xs("GGG", level="module")["em_topq"], 0))
+    regles = [("reference_A", "(A) absolute, module seen", "---"), ("brut", "Raw transferred", "no"),
+              ("platt", "Platt recalibration", "$k$"), ("intercept", "Intercept-only update", "$k$"),
+              ("top_q", "Top-$q$ (training rate)", "no"), ("em_topq", "Top-$q$ (EM estimate)", "no"),
+              ("relatives", "Relative features", "no"), ("top_q_oracle", "Top-$q$ (true rate, bound)", "oracle")]
+    corps = []
+    for r, lib, lab in regles:
+        a, b = k_moy.loc[r], p_moy.loc[r]
+        sd = f" ({sd_sig[r]:.3f})" if r in ("platt", "intercept") else ""
+        corps.append(f"{lib} & {lab} & {f3(a.abs_derive)}{sd} & {f3(a.ecart_risque)} & {f3(a.precision)} & "
+                     f"{f3(a.F1)} & {f3(b.abs_derive)} & {f3(b.ecart_risque)} & {f3(b.precision)} & {f3(b.F1)} \\\\")
+    ecrire("tab_remedies.tex", r"""\begin{table*}[t]
+\centering
+\caption{Remedies compared on the same students (25\% cut-off; means over modules). Plan $k$: Platt and intercept-only updates use $k=100$ labelled students of the target module drawn at random (50 draws; standard deviation of the share flagged in parentheses), and all rules are evaluated on the remaining students. Pilot: the first presentation of each module is the labelled cohort and all rules are evaluated on later presentations. $|\Delta^{\mathrm{ref}}|$: absolute flag-rate drift against the absolute-feature model with the module seen; $|$flagged $-$ risk$|$: distance between the share flagged and the observed at-risk rate, which requires no reference model. Top-$q$ flags the $q$ highest scores of each cohort, $q$ being the at-risk rate of the training modules, the rate estimated without labels by EM \cite{saerens2002priors}, or the true rate (unreachable bound). Per-module values are given in the supplementary material.}
+\label{tab:remedies}
+\footnotesize
+\begin{tabular}{@{}llcccccccc@{}}
+\toprule
+ & Target & \multicolumn{4}{c}{Plan $k=100$} & \multicolumn{4}{c}{Pilot cohort} \\
+\cmidrule(lr){3-6}\cmidrule(l){7-10}
+Rule & labels & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 \\
+\midrule
+""" + "\n".join(corps) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+
+    # --- Familles de modèles : forêt pondérée, logistique, forêt non pondérée calibrée ---
+    lignes = []
+    for fichier, lib in [("normalisations.csv", "Weighted forest"), ("normalisations_logit.csv", "Logistic regression"),
+                         ("normalisations_rf_cal.csv", "Unweighted calibrated forest")]:
+        d = pd.read_csv(RES / fichier)
+        d = d[(d.cutoff == 0.25) & d.variante.isin(["absolues", "rang"])]
+        d = d.assign(derive=(d.signal_B - d.signal_A).abs(), gap=(d.signal_B - d.risque).abs(),
+                     pgap=(d.p_moyen_B - d.risque).abs(), dbrier=(d.brier_B - d.brier_A).abs())
+        g = d.groupby("variante")[["auc_B", "ap_B", "derive", "gap", "pgap", "dbrier", "precision_B", "precision_cap_B"]].mean()
+        lignes.append((lib, g))
+    noms = {"Weighted forest": "Frst", "Logistic regression": "Logit", "Unweighted calibrated forest": "Cal"}
+    corps = []
+    for lib, g in lignes:
+        for v, vl in [("absolues", "absolute"), ("rang", "rank")]:
+            r = g.loc[v]
+            vn = "Abs" if v == "absolues" else "Rank"
+            for col, cn in [("auc_B", "AucB"), ("ap_B", "ApB"), ("derive", "Drift"), ("gap", "Gap"), ("pgap", "PGap"),
+                            ("precision_cap_B", "PrecCap")]:
+                m(f"resMod{noms[lib]}{cn}{vn}", f3(r[col]))
+            corps.append(f"{lib if v == 'absolues' else ''} & {vl} & {f3(r.auc_B)} & {f3(r.ap_B)} & {f3(r.derive)} & "
+                         f"{f3(r.gap)} & {f3(r.pgap)} & {f3(r.dbrier)} & {f3(r.precision_cap_B)} \\\\")
+        corps.append(r"\midrule")
+    ecrire("tab_models.tex", r"""\begin{table*}[t]
+\centering
+\caption{Is the effect specific to the weighted forest? Protocol (B), 25\% cut-off, means over modules, with absolute features and within-cohort ranks. Weighted forest and logistic regression use balanced class weights and threshold 0.5; the unweighted forest is calibrated by isotonic regression and uses threshold 0.5 on calibrated probabilities. AP: average precision. $|\Delta^{\mathrm{same}}|$: absolute flag-rate drift against (A) with the same model and features. $|\bar{p}-$risk$|$: distance between mean predicted risk and observed at-risk rate. $|\Delta$Brier$|$: absolute change of the Brier score from (A) to (B). Capacity precision: precision when flagging the 30\% highest scores of each cohort.}
+\label{tab:models}
+\footnotesize
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+Model & Features & AUC (B) & AP (B) & $|\Delta^{\mathrm{same}}|$ & $|$flagged $-$ risk$|$ & $|\bar{p}-$risk$|$ & $|\Delta$Brier$|$ & Capacity precision \\
+\midrule
+""" + "\n".join(corps[:-1]) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+
+    # --- Average Precision ---
+    ap = pd.read_csv(RES / "average_precision_c25.csv")
+    for src, nom in [("rf", "Abs"), ("rf_rel", "Rel"), ("rf_wd", "WdAbs"), ("rf_rel_wd", "WdRel")]:
+        x = ap[ap.source == src]
+        m(f"resApB{nom}", f3(x.ap_B.mean()))
+        m(f"resApA{nom}", f3(x.ap_A.mean()))
+    m("resWdPrevalence", f3(ap[ap.source == "rf_wd"].prevalence.mean()))
+    corps = []
+    for (cible, modele, var), x in ap.groupby(["cible", "modele", "variables"]):
+        cl = "W or F" if cible == "withdrawn_fail" else "W only"
+        corps.append(f"{cl} & {modele.replace('forêt', 'forest')} & {'absolute' if var == 'absolues' else 'relative'} & "
+                     f"{f3(x.prevalence.mean())} & {f3(x.ap_A.mean())} & {f3(x.ap_B.mean())} \\\\")
+    ecrire("tab_s_ap.tex", r"""\begin{table}[!ht]
+\centering
+\caption{Average precision (area under the precision--recall curve) at the 25\% cut-off, means over modules.}
+\label{tab:s-ap}
+\footnotesize
+\begin{tabular}{@{}lllccc@{}}
+\toprule
+Target & Model & Features & Prevalence & AP (A) & AP (B) \\
+\midrule
+""" + "\n".join(corps) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+
+    # --- Taille d'entraînement ---
+    sc = pd.read_csv(RES / "size_control_c25.csv")
+    g = sc.groupby(["variables", "module"])[["auc_A_taille", "auc_B"]].mean()
+    g["cout"] = g.auc_A_taille - g.auc_B
+    for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+        m(f"resSizeCost{vn}", f3(g.xs(v).cout.mean()))
+    p = pd.read_parquet(RES / "preds" / "preds_rf_active_c25.parquet")
+    n_A = 0.8 * len(p)
+    ratios = [((p.code_module != mm) & ~p.id_student.isin(set(p.loc[p.code_module == mm, "id_student"]))).sum() / n_A
+              for mm in p.code_module.unique()]
+    m("resSizeRatioMin", f2(min(ratios)))
+    m("resSizeRatioMax", f2(max(ratios)))
+
+    # --- Équité : effets fixes, intersections ---
+    fe = pd.read_csv(RES / "fairness_fe_c25.csv").set_index(["variables", "protocole"])
+    for (v, pr), nom in [(("absolues", "aleatoire"), "AbsA"), (("absolues", "lomo"), "AbsB"), (("relatives", "lomo"), "RelB")]:
+        r = fe.loc[(v, pr)]
+        m(f"resFeGlobal{nom}", signe(r.ecart_global))
+        m(f"resFeFixed{nom}", signe(r.ecart_effets_fixes))
+        m(f"resFeFixed{nom}CI", f"[{signe(r.ecart_ef_bas)}, {signe(r.ecart_ef_haut)}]")
+    it = pd.read_csv(RES / "fairness_intersection_c25.csv").set_index(["variables", "groupe"])
+    for v, vn in [("absolues", "Abs"), ("relatives", "Rel")]:
+        for gr, gn in [("F × Q1", "FQOne"), ("M × Q1", "MQOne"), ("F × Q5", "FQFive"), ("M × Q5", "MQFive"),
+                       ("F × Y", "FDis"), ("M × Y", "MDis")]:
+            m(f"resInter{gn}{vn}", f3(it.loc[(v, gr), "FPR"]))
+    corps = [f"{'absolute' if r.Index[0] == 'absolues' else 'relative'} & {r.croisement.replace('genre', 'gender').replace('handicap', 'disability')} & "
+             f"{r.Index[1].replace('F', 'female').replace('M ', 'male ').replace('Y', 'disability').replace('N', 'no disability')} & "
+             f"{r.n_negatifs:,} & {f3(r.FPR)} [{f3(r.ic_bas)}, {f3(r.ic_haut)}] \\\\"
+             for r in it.reset_index().set_index(["variables", "groupe"]).itertuples()]
+    ecrire("tab_s_intersection.tex", r"""\begin{table}[!ht]
+\centering
+\caption{False-positive rates of protocol (B) for intersecting groups (25\% cut-off), with the number of students not at risk in each group and 95\% cluster-bootstrap intervals.}
+\label{tab:s-intersection}
+\footnotesize
+\begin{tabular}{@{}lllrc@{}}
+\toprule
+Features & Crossing & Group & $n$ (negatives) & FPR [95\% CI] \\
+\midrule
+""" + "\n".join(corps) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+
+    # --- Taille de cohorte avec IC ---
+    ic = pd.read_csv(RES / "cohort_size_ic.csv", header=[0, 1], index_col=0)
+    ic.index = ic.index.astype(str)
+    cs = pd.read_csv(RES / "cohort_size.csv")
+    cs["taille"] = cs["taille"].astype(str)
+    cs["abs_ecart"] = cs.ecart_au_complet.abs()
+    res = cs.groupby(["taille", "module"])[["AUC", "abs_ecart", "ecart_risque", "precision", "F1"]].mean().groupby(level="taille").mean()
+    m("resCohortAucFiftyCI", f"[{f3(ic.loc['50', ('AUC', '0.025')])}, {f3(ic.loc['50', ('AUC', '0.975')])}]")
+    m("resCohortAucTenCI", f"[{f3(ic.loc['10', ('AUC', '0.025')])}, {f3(ic.loc['10', ('AUC', '0.975')])}]")
+    m("resNPartitions", str(cs[cs.taille != "complet"].decoupage.nunique()))
+    corps = []
+    for n in ["10", "20", "50", "100", "200", "complet"]:
+        r = res.loc[n]
+        ci = (f"[{f3(ic.loc[n, ('AUC', '0.025')])}, {f3(ic.loc[n, ('AUC', '0.975')])}]" if n in ic.index else "---")
+        corps.append(f"{'whole presentation' if n == 'complet' else n} & {f3(r.AUC)} & {ci} & {f3(r.abs_ecart)} & "
+                     f"{f3(r.ecart_risque)} & {f3(r.precision)} & {f3(r.F1)} \\\\")
+    ecrire("tab_s_cohort.tex", r"""\begin{table}[!ht]
+\centering
+\caption{Ranks computed in random sub-cohorts of $n$ students of the target module (25\% cut-off, protocol (B), means over modules and over """ + str(cs[cs.taille != "complet"].decoupage.nunique()) + r""" random partitions; interval: 2.5--97.5\% of the module mean across partitions). Shift: absolute change of the share flagged relative to ranks computed on the whole presentation.}
+\label{tab:s-cohort}
+\footnotesize
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+$n$ & AUC (B) & 95\% interval & Shift & $|$flagged $-$ risk$|$ & Precision & F1 \\
+\midrule
+""" + "\n".join(corps) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+
+    # --- CCC et BBB : AUC à l'intérieur des présentations ---
+    a = pd.read_parquet(RES / "preds" / "preds_rf_active_c25.parquet")
+    r = pd.read_parquet(RES / "preds" / "preds_rf_rel_active_c25.parquet")
+
+    def intra(d, mod, col):
+        k = d.code_module == mod
+        return np.mean([roc_auc_score(g.at_risk, g[col]) for _, g in d[k].groupby("code_presentation")])
+
+    m("resCCCIntraDiff", signe(intra(r, "CCC", "p_lomo") - intra(a, "CCC", "p_lomo")))
+    m("resBBBIntraCost", f3(intra(a, "BBB", "p_aleatoire") - intra(a, "BBB", "p_lomo")))
+    tm = pd.read_csv(RES / "robustesse_modules_c25.csv", header=[0, 1], index_col=0)
+    m("resBBBCostRel", f3(tm.loc["BBB", ("Coût", "relatives")]))
 
 
 def main():
@@ -705,10 +905,11 @@ def main():
     cible()
     sequence()
     revision()
+    relectures()
     lignes = ["% Généré par src/08_paper_assets.py — ne pas modifier à la main."]
     lignes += [f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in sorted(MACROS.items())]
     ecrire("macros.tex", "\n".join(lignes) + "\n")
-    print(f"{len(MACROS)} macros et 10 tableaux écrits dans {OUT}/")
+    print(f"{len(MACROS)} macros et tableaux écrits dans {OUT}/")
 
 
 if __name__ == "__main__":

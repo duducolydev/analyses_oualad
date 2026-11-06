@@ -1,0 +1,20 @@
+\begin{table}[!ht]
+\centering
+\caption{Average precision (area under the precision--recall curve) at the 25\% cut-off, means over modules.}
+\label{tab:s-ap}
+\footnotesize
+\begin{tabular}{@{}lllccc@{}}
+\toprule
+Target & Model & Features & Prevalence & AP (A) & AP (B) \\
+\midrule
+W only & forest & absolute & 0.137 & 0.231 & 0.212 \\
+W only & forest & relative & 0.137 & 0.250 & 0.230 \\
+W or F & boosting & absolute & 0.387 & 0.748 & 0.728 \\
+W or F & boosting & relative & 0.387 & 0.770 & 0.762 \\
+W or F & forest & absolute & 0.387 & 0.736 & 0.720 \\
+W or F & forest & relative & 0.387 & 0.764 & 0.755 \\
+W or F & gru & absolute & 0.387 & 0.735 & 0.729 \\
+W or F & gru & relative & 0.387 & 0.765 & 0.763 \\
+\bottomrule
+\end{tabular}
+\end{table}

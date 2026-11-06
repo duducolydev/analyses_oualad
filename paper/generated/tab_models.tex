@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\caption{Is the effect specific to the weighted forest? Protocol (B), 25\% cut-off, means over modules, with absolute features and within-cohort ranks. Weighted forest and logistic regression use balanced class weights and threshold 0.5; the unweighted forest is calibrated by isotonic regression and uses threshold 0.5 on calibrated probabilities. AP: average precision. $|\Delta^{\mathrm{same}}|$: absolute flag-rate drift against (A) with the same model and features. $|\bar{p}-$risk$|$: distance between mean predicted risk and observed at-risk rate. $|\Delta$Brier$|$: absolute change of the Brier score from (A) to (B). Capacity precision: precision when flagging the 30\% highest scores of each cohort.}
+\label{tab:models}
+\footnotesize
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+Model & Features & AUC (B) & AP (B) & $|\Delta^{\mathrm{same}}|$ & $|$flagged $-$ risk$|$ & $|\bar{p}-$risk$|$ & $|\Delta$Brier$|$ & Capacity precision \\
+\midrule
+Weighted forest & absolute & 0.787 & 0.720 & 0.135 & 0.174 & 0.134 & 0.039 & 0.708 \\
+ & rank & 0.808 & 0.755 & 0.021 & 0.057 & 0.069 & 0.006 & 0.731 \\
+\midrule
+Logistic regression & absolute & 0.775 & 0.716 & 0.061 & 0.148 & 0.123 & 0.022 & 0.694 \\
+ & rank & 0.805 & 0.751 & 0.018 & 0.079 & 0.094 & 0.004 & 0.720 \\
+\midrule
+Unweighted calibrated forest & absolute & 0.786 & 0.720 & 0.150 & 0.191 & 0.139 & 0.038 & 0.708 \\
+ & rank & 0.810 & 0.756 & 0.034 & 0.112 & 0.052 & 0.006 & 0.732 \\
+\bottomrule
+\end{tabular}
+\end{table*}

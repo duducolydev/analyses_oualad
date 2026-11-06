@@ -1,0 +1,24 @@
+\begin{table*}[!ht]
+\centering
+\caption{Remedies compared on the same students and against the same reference (25\% cut-off). For each module, all rules are evaluated on the students not drawn for Platt recalibration ($k=100$ labelled students of the target module, mean of 50 draws; standard deviation across draws in parentheses). Drift: share flagged minus that of the absolute-feature model trained with the module seen, (A). Raw: absolute features, threshold 0.5. Top-$q$: in each cohort, the $q$ students with the highest scores, $q$ being the at-risk rate of the six training modules. Relative: context-relative features, threshold 0.5. Platt and the raw model use absolute features; only Platt uses labels of the target module.}
+\label{tab:s-remedies}
+\footnotesize
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+ & \multicolumn{4}{c}{Flag-rate drift vs (A)} & \multicolumn{4}{c}{Precision} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+Module & Raw & Platt-$k$ & Top-$q$ & Relative & Raw & Platt-$k$ & Top-$q$ & Relative \\
+\midrule
+AAA & +0.10 & +0.07 (0.05) & +0.07 & +0.02 & 0.38 & 0.39 & 0.38 & 0.45 \\
+BBB & +0.19 & +0.06 (0.04) & +0.05 & +0.03 & 0.54 & 0.60 & 0.61 & 0.67 \\
+CCC & $-$0.03 & +0.03 (0.03) & $-$0.02 & +0.02 & 0.78 & 0.74 & 0.77 & 0.72 \\
+DDD & $-$0.05 & +0.02 (0.03) & $-$0.04 & $-$0.05 & 0.79 & 0.75 & 0.78 & 0.81 \\
+EEE & +0.05 & +0.10 (0.04) & +0.15 & +0.03 & 0.70 & 0.66 & 0.60 & 0.72 \\
+FFF & $-$0.03 & +0.07 (0.04) & +0.05 & +0.01 & 0.76 & 0.69 & 0.70 & 0.76 \\
+GGG & +0.51 & $-$0.05 (0.04) & $-$0.03 & $-$0.14 & 0.38 & 0.55 & 0.56 & 0.64 \\
+\midrule
+Mean $|\cdot|$ / mean & 0.14 & 0.06 & 0.06 & 0.04 & 0.62 & 0.62 & 0.63 & 0.68 \\
+Mean $|$flagged $-$ risk$|$ & 0.17 & 0.06 & 0.07 & 0.06 & \multicolumn{4}{c}{(A) absolute: 0.06} \\
+\bottomrule
+\end{tabular}
+\end{table*}

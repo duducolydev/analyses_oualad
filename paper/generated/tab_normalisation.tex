@@ -1,18 +1,16 @@
 \begin{table*}[t]
 \centering
-\caption{Which cohort normalization, and how large a cohort? Top: normalization of the eight engagement and early-assessment features within each presentation (25\% cut-off, LOMO strict, means over modules). Drift: mean absolute flag-rate drift (B) $-$ (A) of the same variant; $|$flagged $-$ risk$|$: distance between the share flagged in (B) and the observed at-risk rate. Bottom: AUC (B) of the rank model when ranks are computed in random sub-cohorts of $n$ students of the target module (5 random partitions); with the whole presentation: 0.808.}
+\caption{Which cohort normalization? The eight engagement and early-assessment features are normalized within each presentation (weighted forest, 25\% cut-off, LOMO strict, means over modules). $|\Delta^{\mathrm{same}}|$: mean absolute flag-rate drift (B) $-$ (A) of the same variant; $|$flagged $-$ risk$|$: distance between the share flagged in (B) and the observed at-risk rate.}
 \label{tab:normalisation}
 \footnotesize
 \begin{tabular}{@{}lccccccc@{}}
 \toprule
-Normalization & AUC (A) & AUC (B) & Cost & Drift & $|$flagged $-$ risk$|$ & Precision (B) & F1 (B) \\
+Normalization & AUC (A) & AUC (B) & Cost & $|\Delta^{\mathrm{same}}|$ & $|$flagged $-$ risk$|$ & Precision (B) & F1 (B) \\
 \midrule
 Absolute values & 0.800 & 0.787 & +0.014 & 0.135 & 0.174 & 0.618 & 0.637 \\
 Percentile rank & 0.816 & 0.808 & +0.008 & 0.021 & 0.057 & 0.680 & 0.658 \\
 z-score (winsorized 1--99\%) & 0.814 & 0.801 & +0.014 & 0.037 & 0.061 & 0.666 & 0.653 \\
 Robust (median, IQR) & 0.809 & 0.800 & +0.009 & 0.024 & 0.054 & 0.664 & 0.648 \\
-\midrule
-\multicolumn{8}{@{}l}{Cohort size $n$ (AUC (B)) --- 10: 0.778; 20: 0.793; 50: 0.802; 100: 0.805; 200: 0.806} \\
 \bottomrule
 \end{tabular}
 \end{table*}

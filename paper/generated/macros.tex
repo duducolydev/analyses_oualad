@@ -1,6 +1,14 @@
 % Généré par src/08_paper_assets.py — ne pas modifier à la main.
 \newcommand{\resAAAAucA}{0.733}
 \newcommand{\resAAACost}{0.002}
+\newcommand{\resApAAbs}{0.736}
+\newcommand{\resApARel}{0.764}
+\newcommand{\resApAWdAbs}{0.231}
+\newcommand{\resApAWdRel}{0.250}
+\newcommand{\resApBAbs}{0.720}
+\newcommand{\resApBRel}{0.755}
+\newcommand{\resApBWdAbs}{0.212}
+\newcommand{\resApBWdRel}{0.230}
 \newcommand{\resAucAbsAFifty}{0.869}
 \newcommand{\resAucAbsATen}{0.735}
 \newcommand{\resAucAbsATwentyFive}{0.800}
@@ -14,11 +22,14 @@
 \newcommand{\resAucRelBTen}{0.739}
 \newcommand{\resAucRelBTwentyFive}{0.808}
 \newcommand{\resBBBCost}{0.043}
+\newcommand{\resBBBCostRel}{0.011}
 \newcommand{\resBBBDrift}{+0.19}
+\newcommand{\resBBBIntraCost}{0.033}
 \newcommand{\resCCCCostAbs}{0.012}
 \newcommand{\resCCCCostRel}{0.029}
 \newcommand{\resCCCDriftAbs}{0.027}
 \newcommand{\resCCCDriftRel}{0.042}
+\newcommand{\resCCCIntraDiff}{$-$0.014}
 \newcommand{\resCIAucBAbs}{[0.778, 0.795]}
 \newcommand{\resCIAucBRel}{[0.800, 0.815]}
 \newcommand{\resCICostAbs}{[0.010, 0.017]}
@@ -48,15 +59,17 @@
 \newcommand{\resCalSlopeGGGRel}{$-$0.094}
 \newcommand{\resCalSlopeRel}{0.077}
 \newcommand{\resCohortAucFifty}{0.802}
+\newcommand{\resCohortAucFiftyCI}{[0.800, 0.804]}
 \newcommand{\resCohortAucFull}{0.808}
 \newcommand{\resCohortAucHundred}{0.805}
 \newcommand{\resCohortAucTen}{0.778}
-\newcommand{\resCohortAucTwenty}{0.793}
-\newcommand{\resCohortFlagFifty}{0.005}
+\newcommand{\resCohortAucTenCI}{[0.773, 0.781]}
+\newcommand{\resCohortAucTwenty}{0.794}
+\newcommand{\resCohortFlagFifty}{0.006}
 \newcommand{\resCohortFlagFull}{0.000}
 \newcommand{\resCohortFlagHundred}{0.004}
-\newcommand{\resCohortFlagTen}{0.043}
-\newcommand{\resCohortFlagTwenty}{0.018}
+\newcommand{\resCohortFlagTen}{0.042}
+\newcommand{\resCohortFlagTwenty}{0.016}
 \newcommand{\resConcAbs}{0.60}
 \newcommand{\resConcGGGAbs}{0.81}
 \newcommand{\resConcGGGRel}{0.69}
@@ -76,6 +89,20 @@
 \newcommand{\resDriftRelHgb}{0.051}
 \newcommand{\resDriftRelPilot}{0.067}
 \newcommand{\resDriftTopQ}{0.058}
+\newcommand{\resEmDrift}{0.187}
+\newcommand{\resEmFone}{0.585}
+\newcommand{\resEmGGGFlag}{100}
+\newcommand{\resEmGapRisk}{0.224}
+\newcommand{\resEmPrec}{0.623}
+\newcommand{\resFeFixedAbsA}{$-$0.085}
+\newcommand{\resFeFixedAbsACI}{[$-$0.101, $-$0.067]}
+\newcommand{\resFeFixedAbsB}{$-$0.048}
+\newcommand{\resFeFixedAbsBCI}{[$-$0.062, $-$0.033]}
+\newcommand{\resFeFixedRelB}{$-$0.022}
+\newcommand{\resFeFixedRelBCI}{[$-$0.036, $-$0.007]}
+\newcommand{\resFeGlobalAbsA}{$-$0.007}
+\newcommand{\resFeGlobalAbsB}{+0.194}
+\newcommand{\resFeGlobalRelB}{+0.015}
 \newcommand{\resFoneAbsATwentyFive}{0.653}
 \newcommand{\resFoneAbsBTwentyFive}{0.637}
 \newcommand{\resFoneRawK}{0.637}
@@ -143,6 +170,59 @@
 \newcommand{\resGoneMinMod}{GGG}
 \newcommand{\resGruGainMax}{0.008}
 \newcommand{\resGruGainMin}{0.006}
+\newcommand{\resIcptDrift}{0.051}
+\newcommand{\resIcptFone}{0.647}
+\newcommand{\resIcptGapRisk}{0.058}
+\newcommand{\resIcptPrec}{0.627}
+\newcommand{\resIcptSdFlag}{0.040}
+\newcommand{\resInterFDisAbs}{0.490}
+\newcommand{\resInterFDisRel}{0.231}
+\newcommand{\resInterFQFiveAbs}{0.346}
+\newcommand{\resInterFQFiveRel}{0.134}
+\newcommand{\resInterFQOneAbs}{0.496}
+\newcommand{\resInterFQOneRel}{0.260}
+\newcommand{\resInterMDisAbs}{0.297}
+\newcommand{\resInterMDisRel}{0.240}
+\newcommand{\resInterMQFiveAbs}{0.169}
+\newcommand{\resInterMQFiveRel}{0.129}
+\newcommand{\resInterMQOneAbs}{0.290}
+\newcommand{\resInterMQOneRel}{0.234}
+\newcommand{\resModCalApBAbs}{0.720}
+\newcommand{\resModCalApBRank}{0.756}
+\newcommand{\resModCalAucBAbs}{0.786}
+\newcommand{\resModCalAucBRank}{0.810}
+\newcommand{\resModCalDriftAbs}{0.150}
+\newcommand{\resModCalDriftRank}{0.034}
+\newcommand{\resModCalGapAbs}{0.191}
+\newcommand{\resModCalGapRank}{0.112}
+\newcommand{\resModCalPGapAbs}{0.139}
+\newcommand{\resModCalPGapRank}{0.052}
+\newcommand{\resModCalPrecCapAbs}{0.708}
+\newcommand{\resModCalPrecCapRank}{0.732}
+\newcommand{\resModFrstApBAbs}{0.720}
+\newcommand{\resModFrstApBRank}{0.755}
+\newcommand{\resModFrstAucBAbs}{0.787}
+\newcommand{\resModFrstAucBRank}{0.808}
+\newcommand{\resModFrstDriftAbs}{0.135}
+\newcommand{\resModFrstDriftRank}{0.021}
+\newcommand{\resModFrstGapAbs}{0.174}
+\newcommand{\resModFrstGapRank}{0.057}
+\newcommand{\resModFrstPGapAbs}{0.134}
+\newcommand{\resModFrstPGapRank}{0.069}
+\newcommand{\resModFrstPrecCapAbs}{0.708}
+\newcommand{\resModFrstPrecCapRank}{0.731}
+\newcommand{\resModLogitApBAbs}{0.716}
+\newcommand{\resModLogitApBRank}{0.751}
+\newcommand{\resModLogitAucBAbs}{0.775}
+\newcommand{\resModLogitAucBRank}{0.805}
+\newcommand{\resModLogitDriftAbs}{0.061}
+\newcommand{\resModLogitDriftRank}{0.018}
+\newcommand{\resModLogitGapAbs}{0.148}
+\newcommand{\resModLogitGapRank}{0.079}
+\newcommand{\resModLogitPGapAbs}{0.123}
+\newcommand{\resModLogitPGapRank}{0.094}
+\newcommand{\resModLogitPrecCapAbs}{0.694}
+\newcommand{\resModLogitPrecCapRank}{0.720}
 \newcommand{\resNActive}{26,232}
 \newcommand{\resNConcImproved}{6}
 \newcommand{\resNCorrTests}{69}
@@ -156,6 +236,7 @@
 \newcommand{\resNImprovedAuc}{5}
 \newcommand{\resNImprovedDrift}{6}
 \newcommand{\resNModules}{7}
+\newcommand{\resNPartitions}{20}
 \newcommand{\resNPres}{22}
 \newcommand{\resNSeeds}{10}
 \newcommand{\resNormMaxSpread}{0.008}
@@ -231,6 +312,10 @@
 \newcommand{\resSeqGainMax}{0.005}
 \newcommand{\resShareFemaleBBB}{88}
 \newcommand{\resShareFemaleGGG}{81}
+\newcommand{\resSizeCostAbs}{0.014}
+\newcommand{\resSizeCostRel}{0.008}
+\newcommand{\resSizeRatioMax}{1.22}
+\newcommand{\resSizeRatioMin}{0.93}
 \newcommand{\resStabAbs}{0.81}
 \newcommand{\resStabRel}{0.81}
 \newcommand{\resThrDriftAbsMax}{0.138}
@@ -251,6 +336,7 @@
 \newcommand{\resWdDriftRel}{0.028}
 \newcommand{\resWdGGGDriftAbs}{+0.17}
 \newcommand{\resWdGGGDriftRel}{+0.03}
+\newcommand{\resWdPrevalence}{0.137}
 \newcommand{\resWdRecBAbs}{0.12}
 \newcommand{\resWdRecBRel}{0.10}
 \newcommand{\resWdRisk}{13.7}

@@ -34,3 +34,6 @@ paper/build.log
 
 # Documents
 docs/
+
+# Journaux de compilation
+paper/build_*.log
