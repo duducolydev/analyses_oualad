@@ -18,6 +18,9 @@
 \graphicspath{{../figures/en/}}
 \input{generated/macros}
 
+% Information manquante, visible en rouge pour ne pas être oubliée avant soumission
+\newcommand{\afaire}[1]{\textcolor{red}{[\textbf{TO DO:} #1]}}
+
 \newcommand{\cA}{(A)}
 \newcommand{\cB}{(B)}
 
@@ -25,11 +28,13 @@
 
 \title{The Ranking Transfers, the Threshold Does Not:\\ Early At-Risk Prediction in Unseen Courses}
 
-% TODO (auteurs) : confirmer la liste et l'ordre des auteurs, et l'adresse de correspondance.
-\author{Doudou~Coly and El~Hadji~Mamadou~Nguer%
-\thanks{D. Coly and E. H. M. Nguer are with the Universit\'e Num\'erique Cheikh Hamidou Kane (UN-CHK), Dakar, Senegal.}}
+% Emplacements \afaire{...} : informations à fournir par les auteurs avant soumission (texte rouge).
+\author{Doudou~Coly, El~Hadji~Bassirou~Tour\'e and El~Hadji~Mamadou~Nguer%
+\thanks{D. Coly and E. H. M. Nguer are with the Universit\'e Num\'erique Cheikh Hamidou Kane (UN-CHK), Dakar, Senegal (e-mail: \afaire{adresses de D. Coly et E. H. M. Nguer}).}%
+\thanks{E. H. B. Tour\'e is with the Universit\'e Cheikh Anta Diop de Dakar (UCAD), Dakar, Senegal (e-mail: elhadjibassirou.toure@ucad.edu.sn).}%
+\thanks{Corresponding author: \afaire{auteur correspondant et adresse}.}}
 
-\markboth{Preprint}{Coly and Nguer: The Ranking Transfers, the Threshold Does Not}
+\markboth{Preprint}{Coly \MakeLowercase{\textit{et al.}}: The Ranking Transfers, the Threshold Does Not}
 
 \maketitle
 
@@ -298,6 +303,18 @@ We will replay the same protocol on Moodle data from a fully online Senegalese u
 \section{Conclusion}
 \label{sec:conclusion}
 Measured strictly---early, on students still enrolled, with no student on both sides of the split and with comparable aggregation---the cost of moving an at-risk model to an unseen course is small for ranking and large for alert volume and calibration. Calibration fails because engagement and early scores are read on absolute scales that depend on course design; the same features matter everywhere. Normalizing them within the cohort reduces the drift without labels, improves ranking on unseen courses on average, and strongly attenuates a gender disparity created by pooling contexts, provided cohorts are large enough. Early-warning systems meant to travel should be evaluated on unseen contexts, report alert rates and calibration alongside discrimination, and audit fairness within contexts.
+
+\section*{Ethics Statement}
+This study is a secondary analysis of OULAD, a public dataset released under a CC-BY 4.0 licence in which students are anonymized by the data provider \cite{kuzilek2017oulad}. No new data were collected, no attempt was made to re-identify students, and no intervention was carried out; under these conditions no ethical approval was required. \afaire{confirmer selon les règles de l'UN-CHK et de la revue.}
+
+\section*{Author Contributions}
+\afaire{proposition à valider par les trois auteurs.} D.~Coly: conceptualization, methodology, software, formal analysis, investigation, visualization, writing---original draft. E.~H.~B.~Tour\'e: supervision, methodology, writing---review and editing. E.~H.~M.~Nguer: supervision, conceptualization, writing---review and editing.
+
+\section*{Funding}
+\afaire{financement, ou ``This research received no specific grant from any funding agency''.}
+
+\section*{Conflicts of Interest}
+\afaire{déclaration, par exemple ``The authors declare no conflict of interest''.}
 
 \section*{Data and Code Availability}
 OULAD is available under a CC-BY 4.0 licence from the Open University (\url{https://analyse.kmi.open.ac.uk/open_dataset}). The code that reproduces every figure, table and number of this article, with its tests, is available at \url{https://github.com/duducolydev/analyses_oualad}.

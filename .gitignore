@@ -31,3 +31,6 @@ Thumbs.db
 
 # Journal de compilation LaTeX
 paper/build.log
+
+# Documents
+docs/
