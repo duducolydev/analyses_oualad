@@ -186,7 +186,7 @@ Alert volume behaves quite differently. In GGG, the transferred model flags \res
 \label{fig:transfer}
 \end{figure*}
 
-\subsection{Calibration, not just the threshold}
+\subsection{Not a threshold choice, a calibration problem}
 \label{sec:calibration}
 One might suspect that the drift simply reflects the choice of threshold. It does not. With absolute features, the mean drift stays between \resThrDriftAbsMin{} and \resThrDriftAbsMax{} for every threshold from 0.3 to 0.7, and the mean predicted risk, which involves no threshold at all, shifts by \resScoreShiftAbs{} on average and by \resScoreShiftGGGAbs{} in GGG. Calibration worsens accordingly (\cref{tab:calibration}). Moving to an unseen module changes the Brier score by \resCalBrierAbs{} on average (\resCalBrierGGGAbs{} in GGG), calibration-in-the-large by \resCalCitlAbs{} (\resCalCitlGGGAbs{} in GGG), and the calibration slope of GGG by \resCalSlopeGGGAbs. The reliability diagrams in \cref{fig:reliability} make the problem visible. Over all modules, the three models are close to one another. In GGG, however, the transferred absolute model predicts risks well above those observed, whereas the relative model stays close to the local one. With relative features, the average changes shrink to \resCalBrierRel{}, \resCalCitlRel{} and \resCalSlopeRel{}.
 
