@@ -13,6 +13,8 @@ Durée indicative (16 Go de RAM, 16 cœurs) : ~5 h, dont ~40 min pour SHAP,
   python run_all.py --sans-sequences   réutilise les résultats T5 existants
   python run_all.py --sans-graines     réutilise les relances multi-graines existantes
   python run_all.py --sans-latex       ne compile pas l'article
+  python run_all.py --depuis 10        reprend à l'étape 10 (numérotation de --liste)
+  python run_all.py --liste            affiche les étapes numérotées
 
 Seule exception : results/reference_rf_c25.txt, sortie des scripts initiaux
 (commit 6ac9053), conservée telle quelle comme point de départ de l'audit.
@@ -74,13 +76,22 @@ def main():
     ap.add_argument("--sans-sequences", action="store_true")
     ap.add_argument("--sans-graines", action="store_true")
     ap.add_argument("--sans-latex", action="store_true")
+    ap.add_argument("--depuis", type=int, default=1, help="Numéro de l'étape de reprise (voir --liste).")
+    ap.add_argument("--liste", action="store_true", help="Affiche les étapes numérotées et s'arrête.")
     args = ap.parse_args()
 
     if not (RACINE / "data" / "OULAD" / "studentVle.csv").exists():
         sys.exit("Données absentes : placer les 7 CSV OULAD dans data/OULAD/ (voir README).")
     env = {**os.environ, "PYTHONUTF8": "1"}
     debut = time.time()
-    for nom, cmd in etapes(args.sans_shap, args.sans_sequences, args.sans_graines):
+    liste = etapes(args.sans_shap, args.sans_sequences, args.sans_graines)
+    if args.liste:
+        for i, (nom, _) in enumerate(liste, 1):
+            print(f"{i:3d}  {nom}")
+        return
+    for i, (nom, cmd) in enumerate(liste, 1):
+        if i < args.depuis:
+            continue
         t = time.time()
         print(f"\n=== {nom}", flush=True)
         r = subprocess.run(cmd, cwd=RACINE, env=env)
