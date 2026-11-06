@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below, together with the OULAD dataset."
+title: "The Ranking Transfers, the Threshold Does Not: code and results for early at-risk prediction in unseen courses (OULAD)"
+type: software
+authors:
+  - family-names: Coly
+    given-names: Doudou
+    affiliation: "Université Numérique Cheikh Hamidou Kane (UN-CHK)"
+  - family-names: Touré
+    given-names: El Hadji Bassirou
+    affiliation: "Université Cheikh Anta Diop de Dakar (UCAD)"
+  - family-names: Nguer
+    given-names: El Hadji Mamadou
+    affiliation: "Université Numérique Cheikh Hamidou Kane (UN-CHK)"
+repository-code: "https://github.com/duducolydev/analyses_oualad"
+keywords:
+  - learning analytics
+  - at-risk prediction
+  - transferability
+  - calibration
+  - OULAD
+references:
+  - type: data
+    title: "Open University Learning Analytics dataset"
+    authors:
+      - family-names: Kuzilek
+        given-names: Jakub
+      - family-names: Hlosta
+        given-names: Martin
+      - family-names: Zdrahal
+        given-names: Zdenek
+    journal: "Scientific Data"
+    volume: 4
+    start: 170171
+    year: 2017
+    doi: "10.1038/sdata.2017.171"
+    license: CC-BY-4.0
