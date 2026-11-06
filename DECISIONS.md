@@ -225,3 +225,29 @@ appliquer à l'étape 4).
    [+0,006 ; +0,100] en défaveur des femmes. IMD : FPR plus élevé pour Q1 dans
    6 modules sur 7 — écart présent DANS les modules, pas un effet de composition.
    Justification du bootstrap groupé par étudiant écrite dans le script.
+
+Après relance complète en LOMO strict (29/10–06/11/2026) : moyennes inchangées
+à ±0,002 (AUC (B) 0,787 / 0,808 ; |dérive| 0,135 / 0,021) ; CCC relatives −
+absolues −0,008 ± 0,002 (au lieu de −0,015) ; écart FPR F−H dans CCC en
+relatives +0,035 [−0,014 ; +0,081], non significatif ; en absolues, écart
+significativement en faveur des femmes dans 5 modules, contre elles dans aucun ;
+dérive améliorée dans 6 modules sur 7 (Wilcoxon p = 0,047).
+
+## D15 — Étape 3 : normalisations alternatives et taille de cohorte (06/11/2026)
+
+`src/15_normalisations.py` (cutoffs 10/25/50 %, LOMO strict) : toute
+normalisation par cohorte capte l'essentiel du gain. À 25 % — AUC (B) : absolues
+0,787, rang 0,808, z-score 0,801, robuste 0,800 ; |dérive| (même variante) :
+0,135 / 0,021 / 0,037 / 0,024 ; |signalés − risque| : 0,174 / 0,057 / 0,061 /
+0,054 ; précision (B) : 0,618 / 0,680 / 0,666 / 0,664. Les rangs sont les
+meilleurs ou à égalité à chaque cutoff, sans paramètre et insensibles aux
+valeurs sentinelles ; les écarts entre normalisations (≤ 0,008 d'AUC) sont
+faibles. Conséquence pour l'article : la contribution est la normalisation PAR
+COHORTE ; le rang en est la forme recommandée, pas une condition nécessaire.
+
+`src/16_cohort_size.py` (rangs recalculés dans des sous-cohortes aléatoires du
+module testé, 5 découpages) : AUC (B) 0,778 / 0,793 / 0,802 / 0,805 / 0,806 /
+0,808 pour n = 10 / 20 / 50 / 100 / 200 / présentation entière ; écart de part
+signalée au cas complet 0,043 / 0,018 / 0,005 / 0,004 / 0,003. Les rangs sont
+fiables à partir d'environ 50 étudiants ; en dessous de 20, le gain se dégrade
+nettement (n = 10 : AUC sous celle des variables absolues, 0,787).

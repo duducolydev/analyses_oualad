@@ -17,6 +17,8 @@ notes sont remplacées par leur rang centile au sein de la présentation (parmi
 les étudiants de la population retenue, au même cutoff). Le volume d'activité
 « normal » dépend de la conception du module ; le rang, lui, est comparable
 d'un contexte à l'autre. Calculable au cutoff, sans aucune étiquette.
+Paramètre `normalisation` (étape 3 de la révision) : "rang" (défaut), "zscore"
+ou "robuste" — voir normaliser().
 
 Population (paramètre `population`) :
   - "active" (défaut) : étudiants inscrits au cutoff et pas encore désinscrits.
@@ -36,6 +38,7 @@ CIBLES = {"withdrawn_fail": ["Withdrawn", "Fail"], "withdrawn": ["Withdrawn"]}
 VARIABLES_CONTEXTUELLES = ["total_clicks", "active_days", "distinct_sites",
                            "first_activity", "last_activity", "clicks_per_active_day",
                            "n_submissions", "mean_early_score"]
+NORMALISATIONS = ("rang", "zscore", "robuste")
 
 
 def charger(data: Path, cache: Path | None = None) -> dict[str, pd.DataFrame]:
@@ -55,9 +58,30 @@ def charger(data: Path, cache: Path | None = None) -> dict[str, pd.DataFrame]:
     return tables
 
 
+def normaliser(df: pd.DataFrame, colonnes, groupes, methode: str = "rang") -> pd.DataFrame:
+    """Normalisation de `colonnes` au sein de chaque groupe (cohorte) :
+      rang     rang centile (moyenne des rangs pour les ex aequo) — modèle principal
+      zscore   (x − moyenne) / écart-type, après écrêtage aux centiles 1 et 99 de la
+               cohorte (les valeurs sentinelles, ex. −999, écraseraient sinon l'échelle)
+      robuste  (x − médiane) / écart interquartile (1 si l'écart est nul)
+    """
+    if methode not in NORMALISATIONS:
+        raise ValueError(f"normalisation doit valoir {NORMALISATIONS}")
+    g = df.groupby(groupes)[colonnes]
+    if methode == "rang":
+        return g.rank(pct=True, method="average")
+    if methode == "zscore":
+        x = df[colonnes].clip(g.transform(lambda s: s.quantile(0.01)),
+                              g.transform(lambda s: s.quantile(0.99)), axis=1)
+        gx = x.groupby([df[c] for c in groupes])
+        return (x - gx.transform("mean")) / gx.transform("std").replace(0, 1).fillna(1)
+    iqr = (g.transform(lambda s: s.quantile(0.75)) - g.transform(lambda s: s.quantile(0.25))).replace(0, 1)
+    return (df[colonnes] - g.transform("median")) / iqr
+
+
 def construire(tables: dict[str, pd.DataFrame], cutoff: float,
                population: str = "active", relatives: bool = False,
-               cible: str = "withdrawn_fail") -> pd.DataFrame:
+               cible: str = "withdrawn_fail", normalisation: str = "rang") -> pd.DataFrame:
     if population not in POPULATIONS:
         raise ValueError(f"population doit valoir {POPULATIONS}")
     if cible not in CIBLES:
@@ -119,8 +143,7 @@ def construire(tables: dict[str, pd.DataFrame], cutoff: float,
     df["last_activity"] = df["last_activity"].fillna(-999)
 
     if relatives:
-        df[VARIABLES_CONTEXTUELLES] = (df.groupby(CLE)[VARIABLES_CONTEXTUELLES]
-                                       .rank(pct=True, method="average"))
+        df[VARIABLES_CONTEXTUELLES] = normaliser(df, VARIABLES_CONTEXTUELLES, CLE, normalisation)
 
     # --- Cible --- (final_result n'est jamais conservé comme prédicteur)
     df["at_risk"] = df["final_result"].isin(CIBLES[cible]).astype(int)

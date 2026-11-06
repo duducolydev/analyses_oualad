@@ -57,14 +57,15 @@ def test_les_donnees_contiennent_des_remises_tardives(tables):
         tables["studentAssessment"].merge(t["assessments"][["id_assessment"]]))
 
 
-@pytest.mark.parametrize("relatives", [False, True])
+@pytest.mark.parametrize("relatives,normalisation",
+                         [(False, "rang"), (True, "rang"), (True, "zscore"), (True, "robuste")])
 @pytest.mark.parametrize("population", ["active", "all"])
 @pytest.mark.parametrize("cutoff", CUTOFFS)
-def test_invariance_aux_donnees_futures(tables, cutoff, population, relatives):
+def test_invariance_aux_donnees_futures(tables, cutoff, population, relatives, normalisation):
     cle = CLE + ["id_student"]
-    complet = (construire(tables, cutoff, population, relatives)
+    complet = (construire(tables, cutoff, population, relatives, normalisation=normalisation)
                .sort_values(cle).reset_index(drop=True))
-    passe = (construire(tronquer(tables, cutoff), cutoff, population, relatives)
+    passe = (construire(tronquer(tables, cutoff), cutoff, population, relatives, normalisation=normalisation)
              .sort_values(cle).reset_index(drop=True))
     pd.testing.assert_frame_equal(complet.drop(columns="at_risk"),
                                   passe.drop(columns="at_risk"), check_dtype=False)

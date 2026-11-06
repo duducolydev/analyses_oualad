@@ -1,0 +1,17 @@
+[AAA] fait
+[BBB] fait
+[CCC] fait
+[DDD] fait
+[EEE] fait
+[FFF] fait
+[GGG] fait
+
+Moyennes sur les modules (et sur les découpages) :
+            AUC  ecart_risque  abs_ecart_au_complet  precision     F1
+taille                                                              
+10       0.778         0.081                 0.043      0.679  0.619
+20       0.793         0.066                 0.018      0.675  0.638
+50       0.802         0.059                 0.005      0.675  0.650
+100      0.805         0.057                 0.004      0.678  0.656
+200      0.806         0.057                 0.003      0.680  0.657
+complet  0.808         0.057                 0.000      0.680  0.658
