@@ -1,5 +1,7 @@
 # The Ranking Transfers, the Threshold Does Not — code and results
 
+[![DOI](https://zenodo.org/badge/1428318114.svg)](https://doi.org/10.5281/zenodo.24023694)
+
 Code that reproduces every figure, table and number of the article
 *The Ranking Transfers, the Threshold Does Not: Early At-Risk Prediction in
 Unseen Courses* (D. Coly, E. H. B. Touré, E. H. M. Nguer) and of its
@@ -88,4 +90,6 @@ of that first version, used as the starting point of the methodological audit.
 
 ## Citation
 
-See `CITATION.cff`.
+See `CITATION.cff`. The code is archived on Zenodo:
+<https://doi.org/10.5281/zenodo.24023694> (this DOI always resolves to the
+latest version).
