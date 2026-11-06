@@ -1,11 +1,11 @@
 \begin{table*}[t]
 \centering
-\caption{Remedies compared on the same students (25\% cut-off; means over modules). Plan $k$: Platt and intercept-only updates use $k=100$ labelled students of the target module drawn at random (50 draws; standard deviation of the share flagged in parentheses), and all rules are evaluated on the remaining students. Pilot: the first presentation of each module is the labelled cohort and all rules are evaluated on later presentations. $|\Delta^{\mathrm{ref}}|$: absolute flag-rate drift against the absolute-feature model with the module seen; $|$flagged $-$ risk$|$: distance between the share flagged and the observed at-risk rate, which requires no reference model. Top-$q$ flags the $q$ highest scores of each cohort, $q$ being the at-risk rate of the training modules, the rate estimated without labels by EM \cite{saerens2002priors}, or the true rate (unreachable bound). Per-module values are given in the supplementary material.}
+\caption{Remedies compared on the same students (25\% cut-off; means over modules). Random sample: Platt and intercept-only updates use $k=100$ labelled students of the target module drawn at random (50 draws; standard deviation of the share flagged in parentheses), and all rules are evaluated on the remaining students. Pilot: the first presentation of each module is the labelled cohort and all rules are evaluated on later presentations. $|\Delta^{\mathrm{ref}}|$: absolute flag-rate drift against the absolute-feature model with the module seen; $|$flagged $-$ risk$|$: distance between the share flagged and the observed at-risk rate, which requires no reference model. Top-$q$ flags the $q$ highest scores of each cohort, $q$ being the at-risk rate of the training modules, the rate estimated without labels by EM \cite{saerens2002priors}, or the true rate (unreachable bound). Per-module values are given in the supplementary material.}
 \label{tab:remedies}
 \footnotesize
 \begin{tabular}{@{}llcccccccc@{}}
 \toprule
- & Target & \multicolumn{4}{c}{Plan $k=100$} & \multicolumn{4}{c}{Pilot cohort} \\
+ & Target & \multicolumn{4}{c}{Random sample ($k=100$)} & \multicolumn{4}{c}{Pilot cohort} \\
 \cmidrule(lr){3-6}\cmidrule(l){7-10}
 Rule & labels & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 \\
 \midrule

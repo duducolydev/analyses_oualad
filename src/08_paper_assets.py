@@ -720,12 +720,12 @@ def relectures():
                      f"{f3(a.F1)} & {f3(b.abs_derive)} & {f3(b.ecart_risque)} & {f3(b.precision)} & {f3(b.F1)} \\\\")
     ecrire("tab_remedies.tex", r"""\begin{table*}[t]
 \centering
-\caption{Remedies compared on the same students (25\% cut-off; means over modules). Plan $k$: Platt and intercept-only updates use $k=100$ labelled students of the target module drawn at random (50 draws; standard deviation of the share flagged in parentheses), and all rules are evaluated on the remaining students. Pilot: the first presentation of each module is the labelled cohort and all rules are evaluated on later presentations. $|\Delta^{\mathrm{ref}}|$: absolute flag-rate drift against the absolute-feature model with the module seen; $|$flagged $-$ risk$|$: distance between the share flagged and the observed at-risk rate, which requires no reference model. Top-$q$ flags the $q$ highest scores of each cohort, $q$ being the at-risk rate of the training modules, the rate estimated without labels by EM \cite{saerens2002priors}, or the true rate (unreachable bound). Per-module values are given in the supplementary material.}
+\caption{Remedies compared on the same students (25\% cut-off; means over modules). Random sample: Platt and intercept-only updates use $k=100$ labelled students of the target module drawn at random (50 draws; standard deviation of the share flagged in parentheses), and all rules are evaluated on the remaining students. Pilot: the first presentation of each module is the labelled cohort and all rules are evaluated on later presentations. $|\Delta^{\mathrm{ref}}|$: absolute flag-rate drift against the absolute-feature model with the module seen; $|$flagged $-$ risk$|$: distance between the share flagged and the observed at-risk rate, which requires no reference model. Top-$q$ flags the $q$ highest scores of each cohort, $q$ being the at-risk rate of the training modules, the rate estimated without labels by EM \cite{saerens2002priors}, or the true rate (unreachable bound). Per-module values are given in the supplementary material.}
 \label{tab:remedies}
 \footnotesize
 \begin{tabular}{@{}llcccccccc@{}}
 \toprule
- & Target & \multicolumn{4}{c}{Plan $k=100$} & \multicolumn{4}{c}{Pilot cohort} \\
+ & Target & \multicolumn{4}{c}{Random sample ($k=100$)} & \multicolumn{4}{c}{Pilot cohort} \\
 \cmidrule(lr){3-6}\cmidrule(l){7-10}
 Rule & labels & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 & $|\Delta^{\mathrm{ref}}|$ & $|$flagged $-$ risk$|$ & Precision & F1 \\
 \midrule
@@ -888,6 +888,57 @@ $n$ & AUC (B) & 95\% interval & Shift & $|$flagged $-$ risk$|$ & Precision & F1 
     m("resBBBCostRel", f3(tm.loc["BBB", ("Coût", "relatives")]))
 
 
+def tableau_s_remedies():
+    """Tableau S1 : remèdes par module, toutes les règles du Tableau V (échantillon
+    aléatoire k = 100), dérive Δref et précision ; remplace l'ancien S1."""
+    rk = pd.read_csv(RES / "remedes_k_c25.csv", header=[0, 1], index_col=[0, 1, 2]).xs(100, level="k")
+    mk, sk = rk.xs("mean", axis=1, level=1), rk.xs("std", axis=1, level=1)
+    regles = [("brut", "Raw"), ("platt", "Platt"), ("intercept", "Intercept"), ("top_q", "Top-$q$"),
+              ("em_topq", "Top-$q$ (EM)"), ("relatives", "Relative")]
+    d, prec = mk["derive_ref"].unstack("regle"), mk["precision"].unstack("regle")
+    sd, ecr = sk["derive_ref"].unstack("regle"), mk["ecart_risque"].unstack("regle")
+    tete = " & ".join(lib for _, lib in regles)
+
+    def bloc(valeurs, signe_ok, avec_sd):
+        lignes = []
+        for mod in valeurs.index:
+            cellules = []
+            for r, _ in regles:
+                v = valeurs.loc[mod, r]
+                txt = signe(v, 2) if signe_ok else f2(v)
+                if avec_sd and r in ("platt", "intercept"):
+                    txt += f" ({sd.loc[mod, r]:.2f})"
+                cellules.append(txt)
+            lignes.append(f"{mod} & " + " & ".join(cellules) + r" \\")
+        return "\n".join(lignes)
+
+    moy_d = "Mean $|\\Delta^{\\mathrm{ref}}|$ & " + " & ".join(f2(d[r].abs().mean()) for r, _ in regles) + r" \\"
+    moy_e = "Mean $|$flagged $-$ risk$|$ & " + " & ".join(f2(ecr[r].mean()) for r, _ in regles) + r" \\"
+    moy_p = "Mean & " + " & ".join(f2(prec[r].mean()) for r, _ in regles) + r" \\"
+    ecrire("tab_s_remedies.tex", r"""\begin{table}[!ht]
+\centering
+\caption{Remedies per module (25\% cut-off, random sample of $k=100$ labelled students of the target module for Platt and the intercept-only update, mean of 50 draws, standard deviation across draws in parentheses; all rules are evaluated on the remaining students). Top: flag-rate drift $\Delta^{\mathrm{ref}}$ against the absolute-feature model with the module seen. Bottom: precision. Rules as in Table~V of the article.}
+\label{tab:s-remedies}
+\footnotesize
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Module & """ + tete + r""" \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Flag-rate drift $\Delta^{\mathrm{ref}}$}} \\
+""" + bloc(d, True, True) + r"""
+\midrule
+""" + moy_d + "\n" + moy_e + r"""
+\midrule
+\multicolumn{7}{@{}l}{\emph{Precision}} \\
+""" + bloc(prec, False, False) + r"""
+\midrule
+""" + moy_p + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     tables = charger(Path("data/OULAD"), Path("data/cache"))
@@ -906,6 +957,7 @@ def main():
     sequence()
     revision()
     relectures()
+    tableau_s_remedies()
     lignes = ["% Généré par src/08_paper_assets.py — ne pas modifier à la main."]
     lignes += [f"\\newcommand{{\\{k}}}{{{v}}}" for k, v in sorted(MACROS.items())]
     ecrire("macros.tex", "\n".join(lignes) + "\n")
