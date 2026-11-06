@@ -10,7 +10,8 @@ hasard en groupes d'environ n étudiants, et les rangs sont recalculés DANS
 chaque groupe, avec les valeurs absolues du même jour. On mesure la dégradation
 par rapport aux rangs calculés sur la présentation entière (n = « complet »).
 
-n ∈ {10, 20, 50, 100, 200}, 5 découpages aléatoires ; cutoff 25 %.
+n ∈ {10, 20, 50, 100, 200}, 20 découpages aléatoires ; cutoff 25 %. Intervalle
+à 95 % : centiles 2,5–97,5 de la moyenne sur les modules, d'un découpage à l'autre.
 Mesures par module : AUC, part signalée, |signalés − risque|, précision, F1,
 et écart de part signalée au cas « complet ».
 
@@ -31,7 +32,7 @@ warnings.filterwarnings("ignore")
 ID_COLS = ["id_student", "code_module", "code_presentation"]
 TARGET = "at_risk"
 TAILLES = [10, 20, 50, 100, 200]
-N_DECOUPAGES = 5
+N_DECOUPAGES = 20  # 5 dans la première version ; 20 après la relecture R1
 
 
 def main():
@@ -86,6 +87,11 @@ def main():
     resume = par_mod.groupby(level="taille").mean()
     resume.index = resume.index.astype(str)
     print("\nMoyennes sur les modules (et sur les découpages) :\n", resume.reindex(ordre).round(3).to_string())
+    par_dec = d[d.taille != "complet"].groupby(["taille", "decoupage"])[["AUC", "abs_ecart_au_complet"]].mean()
+    ic = par_dec.groupby(level="taille").quantile([0.025, 0.975]).unstack()
+    ic.index = ic.index.astype(str)
+    ic.to_csv(args.out / "cohort_size_ic.csv")
+    print("\nIntervalles à 95 % entre découpages :\n", ic.reindex(ordre[:-1]).round(3).to_string())
 
 
 if __name__ == "__main__":

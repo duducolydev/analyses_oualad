@@ -267,3 +267,34 @@ CCC, protocole strict vs standard) ; équité réécrite (« atténue », intra-
 IMD présent dans les modules) ; recommandation sur l'usage des alertes ;
 positionnement vis-à-vis d'AdaBN et Tent ; URL du dépôt. Aucun chiffre de
 résultat en dur : 257 macros générées par `src/08_paper_assets.py`.
+
+## D17 — Analyses demandées par les relectures R1 et R2 (06–07/11/2026)
+
+Décision de Doudou : soumettre avec un cadrage méthodologique assumé (sans
+attendre les données UN-CHK). Résultats (cutoff 25 %, LOMO strict) :
+- Baselines (14_remedies.py, plan k = 100) : correction de prévalence EM
+  (Saerens et al., 2002), sans étiquette, PIRE que le modèle brut (|dérive|
+  0,187, |signalés − risque| 0,224 ; GGG estimé à 99,9 % à risque) : la dérive
+  n'est pas un changement de prévalence (pour un modèle pondéré équilibré au
+  seuil 0,5, la règle compare des vraisemblances, invariantes sous pur changement
+  de prévalence). Intercept seul (100 étiquetés) : 0,051 / 0,058, précision
+  0,627, F1 0,647 ≈ Platt, et PAS plus stable (écart-type de la part signalée
+  0,040 contre 0,039). Relatives : 0,043 / 0,057, précision 0,681, F1 0,659.
+- Régression logistique (15_normalisations.py --model logit) : rangs → AUC (B)
+  0,775 → 0,805, |dérive| 0,061 → 0,018 ; effet lié aux variables, pas aux arbres.
+- Forêt NON pondérée calibrée (--model rf_cal) : absolues |dérive| 0,150,
+  |p moyen − risque| 0,139 ; rangs 0,034 / 0,052, AUC (B) 0,786 → 0,810. Le
+  choix pondéré + seuil 0,5 n'est pas la cause.
+- Average Precision (17) : forêt (B) 0,720 → 0,755 ; Withdrawn seul 0,212 → 0,230
+  (prévalence 0,137). Diagrammes de fiabilité : GGG absolu en (B) très sous la
+  diagonale, relatif proche de (A).
+- Taille d'entraînement (19) : à taille égale à (B), coût 0,014 / 0,008,
+  identique à l'analyse principale (entraînement de (B) = 0,93–1,22 × (A)).
+- Équité (18) : modèle linéaire avec effets fixes module, écart FPR F − H en
+  (B) absolues +0,194 → −0,048 [−0,062 ; −0,033] ; relatives +0,015 → −0,022.
+  Intersections : en relatives, l'écart restant suit l'IMD, pas le genre.
+- Taille de cohorte, 20 découpages : n = 50 → AUC 0,802 [0,800 ; 0,804].
+- CCC : la perte avec les rangs persiste dans chaque présentation (−0,014) — pas
+  un effet entre présentations ; CCC a déjà la plus faible dérive absolue.
+  BBB : coût de classement réel dans les présentations (0,033), ramené de 0,043
+  à 0,011 par les rangs (effet d'échelle sur l'ordre lui-même).

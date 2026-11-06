@@ -15,6 +15,11 @@ Règles (prédictions LOMO strict de 03_early_curve.py) :
   top_q      dans chaque cohorte (présentation), les q % de scores les plus élevés,
              q = taux à risque des six modules d'entraînement (sans étiquette cible)
   relatives  variables relatives, seuil 0,5 (sans étiquette cible)
+  intercept  mise à jour de l'intercept seul sur les mêmes étudiants étiquetés que
+             Platt (recalibration-in-the-large ; relectures R2, M3)
+  em_topq    sans étiquette : prévalence de chaque cohorte estimée par EM (Saerens
+             et al., 2002) à partir des probabilités du modèle brut, puis signalement
+             de cette part de scores les plus élevés (R2, M3)
   top_q_oracle  top-q avec q = vrai taux à risque du module (référence, inaccessible
              en pratique)
 Plans d'évaluation :
@@ -32,6 +37,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.optimize import brentq
 
 from transfer_eval import recalibrer
 
@@ -39,6 +45,34 @@ RES = Path("results")
 TARGET = "at_risk"
 KS = [25, 50, 100, 200]
 N_TIRAGES = 50
+
+
+def _logit(p):
+    p = np.clip(p, 1e-4, 1 - 1e-4)
+    return np.log(p / (1 - p))
+
+
+def recalibrer_intercept(p_cal, y_cal, p_cible):
+    """Mise à jour de l'intercept seul (recalibration-in-the-large), pondérée
+    équilibrée comme le modèle source : logit(p') = a + logit(p)."""
+    lp, y = _logit(p_cal), y_cal.astype(float)
+    w = np.where(y == 1, len(y) / (2 * y.sum()), len(y) / (2 * (len(y) - y.sum())))
+    a = brentq(lambda a: (w * (y - 1 / (1 + np.exp(-(a + lp))))).sum(), -20, 20)
+    return 1 / (1 + np.exp(-(a + _logit(p_cible))))
+
+
+def prevalence_em(p, pi_source=0.5, iterations=200):
+    """Saerens et al. (2002) : estime sans étiquettes la prévalence de la cohorte
+    cible à partir des probabilités du modèle source (prior source 0,5 pour un
+    modèle entraîné avec des poids de classe équilibrés)."""
+    pi = pi_source
+    for _ in range(iterations):
+        a, b = pi / pi_source * p, (1 - pi) / (1 - pi_source) * (1 - p)
+        nouveau = float((a / (a + b)).mean())
+        if abs(nouveau - pi) < 1e-6:
+            break
+        pi = nouveau
+    return pi
 
 
 def mesures(y, f, f_ref):
@@ -56,7 +90,10 @@ def regles_sans_etiquette(p_abs, p_rel, m):
     train = (p_abs.code_module != m) & ~p_abs.id_student.isin(set(d.id_student))  # LOMO strict
     q = p_abs.loc[train, TARGET].mean()
     rang = d.groupby("code_presentation")["p_lomo"].rank(pct=True, ascending=False)
+    # Prévalence estimée par EM dans chaque cohorte, sans étiquette
+    q_em = d.groupby("code_presentation")["p_lomo"].transform(lambda s: prevalence_em(s.values))
     return d, q, {
+        "em_topq": (rang <= q_em).values,
         "reference_A": (d.p_aleatoire >= 0.5).values,
         "brut": (d.p_lomo >= 0.5).values,
         "top_q": (rang <= q).values,
@@ -80,6 +117,7 @@ def plan_k(p_abs, p_rel):
                 reste = np.setdiff1d(np.arange(len(d)), cal)
                 fr = {nom: v[reste] for nom, v in f.items()}
                 fr["platt"] = recalibrer(pb[cal], y[cal], pb[reste]) >= 0.5
+                fr["intercept"] = recalibrer_intercept(pb[cal], y[cal], pb[reste]) >= 0.5
                 for nom, v in fr.items():
                     lignes.append({"module": m, "k": k, "tirage": r, "regle": nom, "q_train": q,
                                    **mesures(y[reste], v, fr["reference_A"])})
@@ -97,6 +135,7 @@ def plan_pilote(p_abs, p_rel):
         y = d[TARGET].values.astype(bool)
         ft = {nom: v[test] for nom, v in f.items()}
         ft["platt"] = recalibrer(d.p_lomo.values[cal], y[cal], d.p_lomo.values[test]) >= 0.5
+        ft["intercept"] = recalibrer_intercept(d.p_lomo.values[cal], y[cal], d.p_lomo.values[test]) >= 0.5
         for nom, v in ft.items():
             lignes.append({"module": m, "presentation_calibration": pres[0], "n_calibration": int(cal.sum()),
                            "n_test": int(test.sum()), "regle": nom, "q_train": q,

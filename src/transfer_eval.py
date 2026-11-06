@@ -13,6 +13,7 @@ les colonnes de groupe ; elles renvoient une ligne de métriques par pli/context
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -25,7 +26,8 @@ SEED = 0
 
 
 def construire_modele(X: pd.DataFrame, kind: str = "rf", seed: int = SEED):
-    """kind : rf (forêt, principal), logit, hgb (gradient boosting), gru (récurrent, T5)."""
+    """kind : rf (forêt pondérée, principal), logit, hgb (gradient boosting), gru (récurrent, T5),
+    rf_cal (forêt non pondérée calibrée, révision)."""
     if kind == "gru":
         from seq_models import GRUClassifier
         return GRUClassifier(seed=seed)
@@ -43,8 +45,12 @@ def construire_modele(X: pd.DataFrame, kind: str = "rf", seed: int = SEED):
                                      n_jobs=-1, random_state=seed)
     elif kind == "hgb":
         clf = HistGradientBoostingClassifier(class_weight="balanced", random_state=seed)
+    elif kind == "rf_cal":
+        # Forêt NON pondérée, probabilités calibrées (isotonique, CV interne à 3 plis)
+        clf = CalibratedClassifierCV(RandomForestClassifier(n_estimators=300, n_jobs=-1, random_state=seed),
+                                     method="isotonic", cv=3)
     else:
-        clf = LogisticRegression(max_iter=1000, class_weight="balanced")
+        clf = LogisticRegression(max_iter=2000, class_weight="balanced")
     return Pipeline([("pre", pre), ("clf", clf)])
 
 

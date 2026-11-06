@@ -64,8 +64,14 @@ def etapes(sans_shap: bool, sans_sequences: bool, sans_graines: bool):
     e.append(("Remèdes à armes égales", [PY, "src/14_remedies.py"]))
     e.append(("Normalisations alternatives", [PY, "src/15_normalisations.py", *DATA]))
     e.append(("Taille minimale de cohorte", [PY, "src/16_cohort_size.py", *DATA]))
+    e.append(("Régression logistique", [PY, "src/15_normalisations.py", *DATA, "--model", "logit"]))
+    e.append(("Forêt non pondérée calibrée", [PY, "src/15_normalisations.py", *DATA, "--model", "rf_cal",
+                                             "--cutoffs", "0.25", "--variantes", "absolues", "rang"]))
+    e.append(("Average Precision et fiabilité", [PY, "src/17_ap_reliability.py"]))
+    e.append(("Équité : effets fixes et intersections", [PY, "src/18_fairness_fe.py"]))
+    e.append(("Contrôle de la taille d'entraînement", [PY, "src/19_size_control.py", *DATA]))
     # Figures (thèse en français, article en anglais) puis chiffres de l'article
-    for f in ["early_curve", "transfer", "shap", "fairness", "sequence"]:
+    for f in ["early_curve", "transfer", "shap", "fairness", "sequence", "reliability"]:
         for lang in ["fr", "en"]:
             e.append((f"Figure {f} ({lang})", [PY, f"src/fig_{f}.py", "--lang", lang]))
     e.append(("Chiffres et tableaux de l'article", [PY, "src/08_paper_assets.py"]))

@@ -1,0 +1,9 @@
+[rf_cal c=0.25 absolues] AUC A 0.804  B 0.786  |dérive| 0.150  |p moyen B − risque| 0.139  (488s)
+[rf_cal c=0.25 rang    ] AUC A 0.817  B 0.810  |dérive| 0.034  |p moyen B − risque| 0.052  (388s)
+
+Moyennes sur les modules :
+                 auc_A  auc_B   cout   ap_B  derive_meme  ecart_risque  calib_A  calib_B  brier_B  precision_B   F1_B  precision_cap_B
+cutoff variante                                                                                                                       
+0.25   absolues  0.804  0.786  0.018  0.720        0.150         0.191    0.064    0.139    0.210        0.674  0.599            0.708
+       rang      0.817  0.810  0.006  0.756        0.034         0.112    0.045    0.052    0.169        0.735  0.633            0.732
+Écrit : results\normalisations_rf_cal.csv

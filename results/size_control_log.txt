@@ -1,0 +1,20 @@
+[absolues  AAA] n = 25532  AUC A_taille 0.744  B 0.732  coût +0.012
+[absolues  BBB] n = 19978  AUC A_taille 0.794  B 0.753  coût +0.041
+[absolues  CCC] n = 21473  AUC A_taille 0.829  B 0.817  coût +0.012
+[absolues  DDD] n = 20680  AUC A_taille 0.837  B 0.827  coût +0.010
+[absolues  EEE] n = 23014  AUC A_taille 0.840  B 0.838  coût +0.002
+[absolues  FFF] n = 19556  AUC A_taille 0.827  B 0.817  coût +0.011
+[absolues  GGG] n = 23791  AUC A_taille 0.733  B 0.725  coût +0.008
+[relatives AAA] n = 25532  AUC A_taille 0.795  B 0.793  coût +0.002
+[relatives BBB] n = 19978  AUC A_taille 0.808  B 0.801  coût +0.007
+[relatives CCC] n = 21473  AUC A_taille 0.837  B 0.811  coût +0.026
+[relatives DDD] n = 20680  AUC A_taille 0.845  B 0.841  coût +0.004
+[relatives EEE] n = 23014  AUC A_taille 0.841  B 0.838  coût +0.004
+[relatives FFF] n = 19556  AUC A_taille 0.836  B 0.833  coût +0.002
+[relatives GGG] n = 23791  AUC A_taille 0.751  B 0.739  coût +0.012
+
+Coût de transfert à taille d'entraînement égale (moyenne des modules) :
+           auc_A_taille  auc_B   cout
+variables                            
+absolues          0.801  0.787  0.014
+relatives         0.816  0.808  0.008
