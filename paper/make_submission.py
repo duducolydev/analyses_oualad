@@ -1,27 +1,34 @@
-"""Prépare le dossier de soumission anonyme pour JLA (évaluation en double aveugle).
+"""Prépare les archives de l'article pour JLA et pour Overleaf.
 
-JLA demande, pour une soumission LaTeX, le PDF et les sources. Les sources de
-main.tex et supplementary.tex contiennent les noms des auteurs dans les branches
-\\else des blocs \\ifanonymous (version finale) : ce script les retire, rassemble
-les fichiers nécessaires, recompile dans un dossier isolé et vérifie qu'aucune
-information identifiante ne reste, dans les sources comme dans les PDF.
+Sans option : dossier de soumission anonyme (évaluation en double aveugle).
+    JLA demande, pour une soumission LaTeX, le PDF et les sources. Les sources de
+    main.tex et supplementary.tex contiennent les noms des auteurs dans les branches
+    \\else des blocs \\ifanonymous (version finale) : elles sont retirées, l'archive
+    est recompilée dans un dossier isolé et l'absence de toute information
+    identifiante est vérifiée, dans les sources comme dans les PDF.
+    Sortie : paper/submission/manuscript_anonymous.pdf, supplementary_anonymous.pdf,
+             sources_anonymous.zip
 
-Sortie (non versionnée) : paper/submission/
-    manuscript_anonymous.pdf, supplementary_anonymous.pdf, sources_anonymous.zip
+--overleaf : projet complet à téléverser sur Overleaf (New Project > Upload Project)
+    pour la relecture par les co-auteurs. Les sources sont gardées telles quelles
+    (interrupteur \\anonymoustrue / \\anonymousfalse compris), fichiers à la racine.
+    Sortie : paper/submission/overleaf_project.zip
 
-Usage : python paper/make_submission.py   (après compilation normale de l'article)
+Le dossier paper/submission/ n'est pas versionné.
+Usage : python paper/make_submission.py [--overleaf]
 """
+import argparse
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
 PAPER = Path(__file__).resolve().parent
 FIGURES = PAPER.parent / "figures" / "en"
 OUT = PAPER / "submission"
-SRC = OUT / "sources"
 
 # Chaînes qui ne doivent apparaître ni dans les sources ni dans les PDF anonymes.
 IDENTIFIANTS = ["Coly", "Nguer", "Touré", "Tour\\'e", "UN-CHK", "UCAD", "unchk", "ucad.edu",
@@ -37,58 +44,86 @@ def anonymiser(tex: str) -> str:
     return BLOC.sub(lambda m: m.group(1), tex)
 
 
-def main():
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    (SRC / "generated").mkdir(parents=True)
-    (SRC / "figures").mkdir()
-
+def rassembler(dest: Path, anonyme: bool) -> list[Path]:
+    """Copie dans dest tout ce qu'il faut pour compiler l'article et le supplément."""
+    (dest / "generated").mkdir(parents=True)
+    (dest / "figures").mkdir()
     for nom in ["main.tex", "supplementary.tex"]:
-        tex = anonymiser((PAPER / nom).read_text(encoding="utf-8"))
+        tex = (PAPER / nom).read_text(encoding="utf-8")
+        if anonyme:
+            tex = anonymiser(tex)
         tex = tex.replace(r"\graphicspath{{../figures/en/}}", r"\graphicspath{{figures/}}")
         tex = tex.replace("% The IEEE version of this article is kept in ieee/main.tex.\n", "")
-        (SRC / nom).write_text(tex, encoding="utf-8")
+        (dest / nom).write_text(tex, encoding="utf-8")
         for inc in re.findall(r"\\input\{generated/([^}]+)\}", tex):
-            shutil.copy(PAPER / "generated" / f"{inc}.tex", SRC / "generated" / f"{inc}.tex")
+            shutil.copy(PAPER / "generated" / f"{inc}.tex", dest / "generated" / f"{inc}.tex")
         for fig in re.findall(r"\\includegraphics(?:\[[^]]*\])?\{([^}]+)\}", tex):
-            shutil.copy(FIGURES / f"{fig}.pdf", SRC / "figures" / f"{fig}.pdf")
+            shutil.copy(FIGURES / f"{fig}.pdf", dest / "figures" / f"{fig}.pdf")
     for nom in ["JLA_article.cls", "header.png", "references.bib"]:
-        shutil.copy(PAPER / nom, SRC / nom)
+        shutil.copy(PAPER / nom, dest / nom)
+    return sorted(p for p in dest.rglob("*") if p.is_file())
 
-    # Compilation dans le dossier isolé : vérifie que l'archive se suffit à elle-même.
+
+def compiler(dossier: Path):
+    """Compile le supplément puis l'article : vérifie que l'archive se suffit à elle-même."""
     for doc in ["supplementary.tex", "main.tex"]:
         r = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error",
                             "-pdflatex=pdflatex --disable-installer %O %S", doc],
-                           cwd=SRC, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600)
+                           cwd=dossier, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600)
         if r.returncode != 0:
-            sys.exit(f"ÉCHEC : compilation de {doc} dans {SRC} (voir le .log)")
+            sys.exit(f"ÉCHEC : compilation de {doc} dans {dossier} (voir le .log)")
 
-    # Vérification : aucune information identifiante dans les sources ni dans les PDF.
-    import pymupdf
-    problemes = []
-    sources = [p for p in SRC.rglob("*") if p.suffix in {".tex", ".bib", ".cls"}]
-    for p in sources:
-        texte = p.read_text(encoding="utf-8")
-        problemes += [f"{p.name}: {i}" for i in IDENTIFIANTS if i in texte]
-    for doc in ["main.pdf", "supplementary.pdf"]:
-        pdf = pymupdf.open(SRC / doc)
-        texte = " ".join(page.get_text() for page in pdf) + " " + " ".join(str(v) for v in pdf.metadata.values())
-        problemes += [f"{doc}: {i}" for i in IDENTIFIANTS if i in texte]
-        pdf.close()
-    if problemes:
-        sys.exit("ÉCHEC : informations identifiantes trouvées :\n  " + "\n  ".join(problemes))
 
-    shutil.copy(SRC / "main.pdf", OUT / "manuscript_anonymous.pdf")
-    shutil.copy(SRC / "supplementary.pdf", OUT / "supplementary_anonymous.pdf")
-    garder = sources + [SRC / "header.png"] + list((SRC / "figures").glob("*.pdf"))
-    with zipfile.ZipFile(OUT / "sources_anonymous.zip", "w", zipfile.ZIP_DEFLATED) as z:
-        for p in sorted(garder):
-            z.write(p, p.relative_to(SRC).as_posix())
-    shutil.rmtree(SRC)
+def zipper(fichiers: list[Path], racine: Path, cible: Path):
+    with zipfile.ZipFile(cible, "w", zipfile.ZIP_DEFLATED) as z:
+        for p in fichiers:
+            z.write(p, p.relative_to(racine).as_posix())
+
+
+def soumission():
+    if OUT.exists():
+        for p in OUT.glob("*anonymous*"):
+            p.unlink()
+    OUT.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp)
+        fichiers = rassembler(src, anonyme=True)
+        compiler(src)
+
+        import pymupdf
+        problemes = []
+        for p in fichiers:
+            if p.suffix in {".tex", ".bib", ".cls"}:
+                texte = p.read_text(encoding="utf-8")
+                problemes += [f"{p.name}: {i}" for i in IDENTIFIANTS if i in texte]
+        for doc in ["main.pdf", "supplementary.pdf"]:
+            pdf = pymupdf.open(src / doc)
+            texte = " ".join(page.get_text() for page in pdf) + " " + " ".join(str(v) for v in pdf.metadata.values())
+            problemes += [f"{doc}: {i}" for i in IDENTIFIANTS if i in texte]
+            pdf.close()
+        if problemes:
+            sys.exit("ÉCHEC : informations identifiantes trouvées :\n  " + "\n  ".join(problemes))
+
+        shutil.copy(src / "main.pdf", OUT / "manuscript_anonymous.pdf")
+        shutil.copy(src / "supplementary.pdf", OUT / "supplementary_anonymous.pdf")
+        zipper(fichiers, src, OUT / "sources_anonymous.zip")
     print(f"Dossier de soumission prêt : {OUT}")
-    for p in sorted(OUT.iterdir()):
-        print(f"  {p.name}  ({p.stat().st_size / 1024:.0f} Ko)")
+    for nom in ["manuscript_anonymous.pdf", "supplementary_anonymous.pdf", "sources_anonymous.zip"]:
+        print(f"  {nom}  ({(OUT / nom).stat().st_size / 1024:.0f} Ko)")
+
+
+def overleaf():
+    OUT.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp)
+        fichiers = rassembler(src, anonyme=False)
+        compiler(src)
+        zipper(fichiers, src, OUT / "overleaf_project.zip")
+    cible = OUT / "overleaf_project.zip"
+    print(f"Projet Overleaf prêt : {cible}  ({cible.stat().st_size / 1024:.0f} Ko, {len(fichiers)} fichiers)")
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--overleaf", action="store_true", help="projet complet pour Overleaf")
+    overleaf() if ap.parse_args().overleaf else soumission()
