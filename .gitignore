@@ -23,6 +23,15 @@ paper/*.blg
 paper/*.synctex.gz
 paper/*.fdb_latexmk
 paper/*.fls
+paper/*.bcf
+paper/*.run.xml
+paper/ieee/*.aux
+paper/ieee/*.log
+paper/ieee/*.out
+paper/ieee/*.bbl
+paper/ieee/*.blg
+paper/ieee/*.fdb_latexmk
+paper/ieee/*.fls
 
 # Éditeurs / OS
 .vscode/

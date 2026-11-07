@@ -1,0 +1,308 @@
+\documentclass[journal]{IEEEtran}
+
+% Correspondance glyphes -> Unicode : texte du PDF copiable et indexable (accents composés, ex. « ć »)
+\input{glyphtounicode}
+\pdfgentounicode=1
+\usepackage[T1]{fontenc}
+\usepackage{tgtermes}  % Times (TeX Gyre Termes) : glyphes accentués réels, « ć » copiable
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+\crefname{table}{Table}{Tables}
+\crefname{section}{Section}{Sections}
+
+\graphicspath{{../../figures/en/}}
+\input{../generated/macros}
+
+% Information manquante, visible en rouge pour ne pas être oubliée avant soumission
+\newcommand{\afaire}[1]{\textcolor{red}{[\textbf{TO DO:} #1]}}
+
+\newcommand{\cA}{(A)}
+\newcommand{\cB}{(B)}
+\newcommand{\dsame}{\Delta^{\mathrm{same}}}
+\newcommand{\dref}{\Delta^{\mathrm{ref}}}
+
+\begin{document}
+
+\title{The Ranking Transfers, the Threshold Does Not:\\ Early At-Risk Prediction in Unseen Courses}
+
+\author{Doudou~Coly, El~Hadji~Bassirou~Tour\'e and El~Hadji~Mamadou~Nguer%
+\thanks{D. Coly and E. H. M. Nguer are with the Universit\'e Num\'erique Cheikh Hamidou Kane (UN-CHK), Dakar, Senegal (e-mail: doudou.coly@unchk.edu.sn; elhadjimamadou.nguer@unchk.edu.sn).}%
+\thanks{E. H. B. Tour\'e is with the Universit\'e Cheikh Anta Diop de Dakar (UCAD), Dakar, Senegal (e-mail: elhadjibassirou.toure@ucad.edu.sn).}%
+\thanks{Corresponding author: Doudou Coly (e-mail: doudou.coly@unchk.edu.sn).}}
+
+\markboth{Preprint}{Coly \MakeLowercase{\textit{et al.}}: The Ranking Transfers, the Threshold Does Not}
+
+\maketitle
+
+\begin{abstract}
+Early-warning systems in online higher education are usually tested on data splits in which the same courses appear in both the training and the test sets, which says little about how a model behaves in a course it was not built for. We study this question on the Open University Learning Analytics Dataset (\resNEnrol{} enrolments in \resNModules{} modules). Withdrawal or failure is predicted from the first quarter of each course, and each module is held out in turn, with no student appearing on both sides of the split. We first show that three common evaluation choices more than double the apparent cost of transfer. Once these choices are corrected, the ranking of students largely survives the move to an unseen module, with an average loss of \resCostAbs{} in AUC, but the predicted probabilities do not. In one module, the transferred model flags \resGGGFlagB\% of students, whereas the model trained with that module flags \resGGGFlagA\% and the observed risk is \resGGGRisk\%; this over-flagging persists at every threshold between 0.3 and 0.7. Signed SHAP attributions point to the reason. The transferred model relies on the same features as local models, but it reads engagement and early scores on absolute scales that depend on how each course is designed. Correcting for a change in prevalence does not help. Expressing these features relative to the cohort, which requires no labels, brings the alert volume as close to the observed risk as recalibration on labelled students does, and with better precision. It needs cohorts of roughly 50 students, and percentile ranks work best. The drift also produces a gender disparity through the composition of courses, which only within-course audits reveal. Whether these findings hold across institutions remains to be tested.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Learning analytics, at-risk prediction, dropout, early warning systems, transferability, dataset shift, calibration, SHAP, algorithmic fairness, OULAD.
+\end{IEEEkeywords}
+
+%=====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+\IEEEPARstart{D}{ropout} and failure remain persistent problems in online higher education. Because learning management systems (LMS) record what students do from the first day of a course, they make it possible to identify students who may need support while there is still time to help them, and early-warning systems built on these records have become common. The Open University Learning Analytics Dataset (OULAD) \cite{kuzilek2017oulad} holds a central place in this research. It is open and large, it combines demographics, registration records, virtual learning environment (VLE) clickstreams and assessment results for 22 module presentations, and many predictive studies have used it \cite{jin2024slr}.
+
+By now, a high accuracy on OULAD tells us little by itself. Two limitations come up again and again. Many studies compute predictors over the whole presentation, so that the resulting models are retrospective rather than early \cite{elsayed2026fairness}. And models are nearly always evaluated on splits that keep the same courses on both sides. A recent study that predicts outcomes from the first 25\% of each presentation acknowledges its single-institution scope as a limitation \cite{malkani2026kronecker}, and a calibrated early-warning study on OULAD holds out presentations rather than modules, so that other presentations of a test module may appear in training \cite{wu2026calibrated}. Beyond OULAD, several studies have found that predictive models are largely course-specific \cite{gasevic2016onesize,conijn2017lms,lopezzambrano2020portability}, but few have looked at why the models fail when they are moved.
+
+The question matters to any institution that wants to use a model in a course it was not trained on, such as a new programme with no labelled history. OULAD lets us study it methodologically, since each of its seven modules can in turn play the part of the unseen course. We ask which aspects of an early at-risk model still hold in a course it has never seen, why the others break down, and what can be done before any outcome labels are available. The paper makes five contributions, listed by importance.
+\begin{enumerate}
+\item \emph{An evaluation protocol and an audit.} We define a strict evaluation in which predictions are made at a cut-off date, only students still enrolled are considered, no student appears on both sides of a module hold-out, and all protocols are aggregated in the same way. Three common departures from this protocol together more than double the apparent transfer gap (\cref{tab:audit}).
+\item \emph{A diagnosis.} We separate how difficult a module is to predict, how much ranking is lost when the module is unseen, and how far alert volume and calibration drift. Ranking largely transfers. Alert volume and calibration do not, whichever threshold, learner or weighting scheme is used. The modules that seem hardest to transfer to turn out to be hard to predict even when they are seen (\cref{sec:transfer,sec:calibration}).
+\item \emph{An explanation.} Signed SHAP attributions show that the transferred model uses the same features as local models but interprets them on absolute scales whose meaning depends on course design. Global importance measures cannot show this (\cref{sec:shap}).
+\item \emph{A consequence for fairness.} When courses are pooled, calibration drift turns into a gender disparity through course composition, which a pooled audit would read as discrimination. Disparities linked to deprivation, by contrast, are present within courses (\cref{sec:fairness}).
+\item \emph{A remedy derived from the diagnosis.} Because the problem lies in the scale of the features rather than in the prevalence, normalizing engagement and early-assessment features within the cohort corrects it without labels. We compare this correction, on the same students, with recalibration on labelled students, with prevalence correction and with flagging a fixed share, and we describe the conditions it requires (\cref{sec:remedies,sec:normalisation}).
+\end{enumerate}
+Our claims differ in strength. The experiments establish the results for the students of seven modules at one university. They support, without proving it, the interpretation that cohort normalization makes a model less sensitive to course design. Whether this holds in other institutions is a hypothesis that these data cannot test.
+
+%=====================================================================
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Early prediction on OULAD}
+OULAD was released to support the Open University's work on identifying students at risk \cite{kuzilek2017oulad}. Later studies have varied the observation window, predicting at several points of the course \cite{adnan2021percentages} or from the first 25\% of each presentation with deep architectures \cite{malkani2026kronecker}. Hlosta et~al.\ \cite{hlosta2017ouroboros} deal with a related cold-start problem by training on the current presentation instead of past data. The work closest to ours is that of Wu et~al.\ \cite{wu2026calibrated}, who use a 28-day window, calibrate a gradient-boosting model, audit fairness across subgroups and examine alert capacity. We share their attention to calibration, alert volume and fairness, but our study differs in three respects. We hold out whole modules rather than presentations, so that the test course has never been seen. We use signed attributions to explain why calibration fails. And we evaluate a correction that uses the target cohort but no labels.
+
+\subsection{Portability of predictive models across courses}
+The Open Academic Analytics Initiative found that a model trained at one institution could be used at others with a moderate loss of accuracy \cite{jayaprakash2014oaai}. Studies at the course level are less encouraging. The predictive value of LMS indicators depends on instructional conditions \cite{gasevic2016onesize}, models differ substantially between courses of the same institution \cite{conijn2017lms}, and models moved directly from one Moodle course to another work only under some conditions \cite{lopezzambrano2020portability}. Other authors have built course-agnostic early predictors from large volumes of LMS logs \cite{riestra2021massive} or applied transfer learning across MOOC offerings \cite{boyer2015transfer}. These studies ask whether accuracy carries over. We try to identify which part of the model fails to carry over, and why.
+
+\subsection{Dataset shift, calibration and normalization}
+Moving a model to a new context is a form of dataset shift, in which changes in the covariates, in the class priors or in the relation between them can all affect a classifier \cite{morenotorres2012shift}. Clinical prediction offers a well-documented parallel: discrimination often holds up in a new setting while calibration does not, and re-estimating the intercept or the slope on local data recovers much of the loss \cite{janssen2008updating,vancalster2019calibration}. Platt scaling \cite{platt1999probabilistic} plays the same role in machine learning. If only the prevalence changes, it can be estimated without labels, either by expectation--maximization \cite{saerens2002priors} or from the confusion matrix of a black-box classifier \cite{lipton2018labelshift}. If the distribution of the inputs changes, domain adaptation methods re-estimate normalization statistics on the target domain \cite{li2018adabn} or adapt the model at test time using unlabelled target data \cite{wang2021tent}. Normalizing features within a cohort is a simple, model-agnostic version of this idea. We do not present it as a new technique. We use it to test the mechanism we identify, and we report when it works and when it does not.
+
+\subsection{Fairness of predictive student models}
+Fairness audits of student models usually compare error rates and alert rates between demographic groups \cite{gardner2019slicing,baker2022bias}. On OULAD, recent work reports trade-offs between accuracy and fairness \cite{opoku2025tradeoffs}, regional differences in recall \cite{elsayed2026fairness} and gaps in alert rates that depend on the alerting policy \cite{wu2026calibrated}. When groups have different base rates, error-rate parity and calibration cannot all be satisfied at once \cite{chouldechova2017fair,kleinberg2017tradeoffs}, and equal opportunity \cite{hardt2016equality} focuses on true-positive rates instead. Our contribution here is a structural observation: pooling several contexts can produce group disparities that exist in none of them, a case of Simpson's paradox \cite{simpson1951}.
+
+%=====================================================================
+\section{Data and Methods}
+\label{sec:methods}
+
+\subsection{Dataset and target}
+OULAD \cite{kuzilek2017oulad} (CC-BY 4.0) contains \resNEnrol{} enrolments in \resNPres{} presentations of \resNModules{} modules, labelled AAA to GGG, at the Open University in the United Kingdom. Each enrolment ends with one of four outcomes: Distinction, Pass, Fail or Withdrawn. We predict the unfavourable outcome $y=1$, defined as Withdrawn or Fail (\resRiskAll\% of enrolments), because both call for the same kind of early support. The supplementary material repeats the analyses with Withdrawn alone as the target.
+
+\subsection{Early window, population and features}
+For a presentation $p$ lasting $L_p$ days, the cut-off day is $d_c=\mathrm{round}(c\,L_p)$, with $c\in\{0.10,0.20,0.25,0.33,0.50\}$ and $c=0.25$ as the reference. The population at $d_c$ includes the students who registered on or before $d_c$ and had not unregistered by then. Students who have already left cannot be helped by an early warning, and keeping them in the data makes prediction artificially easy (\cref{sec:audit}).
+
+Eighteen predictors are computed for each enrolment, using only data dated on or before $d_c$:
+\emph{demographics} (gender, region, highest education, IMD band, age band, previous attempts, studied credits, disability);
+\emph{registration} (registration date relative to the course start, and days registered in advance, which equals its opposite for early registrations and is zero for late ones);
+\emph{VLE engagement} (total clicks, active days, distinct resources, first and last active day, clicks per active day);
+\emph{early assessments} (number of assessments, and mean score of those, whose deadline \emph{and} submission both fall on or before $d_c$). Missing engagement is coded as zero activity, missing first and last active days by sentinel values outside the observed range, and a missing early score as $-1$.
+
+\paragraph*{Leakage control} Besides excluding the final result and the unregistration date from the predictors \cite{kaufman2012leakage}, we test the whole pipeline for invariance: if every raw record dated after $d_c$ (clicks, submissions, deadlines, unregistrations) is deleted, the feature table must remain exactly the same. The test detects, for example, a filter applied to assessment deadlines alone, which lets late submissions through; at $c=0.25$, these make up \resPctLateSub\% of the retained submissions.
+
+\subsection{Absolute and cohort-normalized features}
+The \emph{absolute} feature set uses these values directly, as most studies do. The \emph{relative} set replaces the eight engagement and early-assessment features with their percentile rank within the presentation,
+\begin{equation}
+\tilde{x}_{ij} = \frac{1}{n_p}\Big(L_{ij} + \frac{E_{ij}+1}{2}\Big),
+\label{eq:rank}
+\end{equation}
+where $P_p$ is the population of presentation $p$ at $d_c$, $n_p=|P_p|$, $L_{ij}$ is the number of students of $P_p$ whose value of feature $j$ is lower than $x_{ij}$, and $E_{ij}$ the number, $i$ included, whose value is equal to it. Tied values receive their average rank. All students without an early score, for instance, share the lowest ranks, and the rank they receive increases with their share of the cohort; this is part of the correction. Demographic and registration features are left unchanged.
+
+No labels are used, but the transformation is \emph{transductive}. A student's features depend on the cohort observed on the same date, so a prediction requires that cohort; the ranks change as students enrol or leave; and a cohort that disengages as a whole keeps the same ranks. To check whether ranks in particular are needed, we compare them with a z-score computed after winsorizing at the 1st and 99th percentiles of the cohort, and with a robust standardization based on the median and the interquartile range. To find out how large a cohort ranks need, we recompute them in the target module within random sub-cohorts of $n\in\{10,20,50,100,200\}$ students (\resNPartitions{} random partitions), leaving the trained model unchanged.
+
+\subsection{Models and protocols}
+Our main model is a random forest \cite{breiman2001rf} with 300 trees and balanced class weights (scikit-learn \cite{pedregosa2011sklearn}, with one-hot encoding of categorical variables). A student is flagged when $\hat{p}\geq 0.5$. With balanced weights, this rule approximately compares the class-conditional likelihoods of the student's features, which gives a balanced operating point that does not depend on the prevalence in the training data. Since this choice could either create or hide a calibration problem, we also report results for a logistic regression with balanced weights and for an unweighted random forest calibrated by isotonic regression (internal three-fold cross-validation).
+
+In protocol \cA, the data are split into five folds, stratified on $y$ and grouped by student, and the out-of-fold predictions cover every enrolment. In protocol \cB, the model is trained on six modules and predicts the seventh. Because \resOverlapStudents\% of students are enrolled in more than one module (up to \resOverlapShareMax\% of the students of \resOverlapShareMaxMod), we use a \emph{strict} version of \cB: students enrolled in the held-out module are removed from the training modules, so that, as in \cA, no student appears on both sides. The training sets of the two protocols have similar sizes (the \cB{} set is \resSizeRatioMin{} to \resSizeRatioMax{} times the size of the \cA{} set), and \cref{sec:robust} shows that the transfer cost does not change when both are trained on exactly the same number of students.
+
+In both protocols, metrics are computed on the students of each module and then averaged across modules. An AUC pooled over modules in \cA{} would partly reward the model for separating modules with different base rates, something \cB{} cannot do. For each module $m$, we define on the same students
+\begin{align}
+\text{difficulty:}\quad & D_m = \mathrm{AUC}_{A}(m), \\
+\text{ranking cost:}\quad & C_m = \mathrm{AUC}_{A}(m) - \mathrm{AUC}_{B}(m), \\
+\text{flag-rate drift:}\quad & \dsame_m = \bar{f}_{B}(m) - \bar{f}_{A}(m),
+\end{align}
+where $\bar{f}(m)$ is the share of the module's students who are flagged, both terms coming from the same model and feature set. To compare feature sets or remedies with one another, we also use a common reference, $\dref_m=\bar{f}(m)-\bar{f}^{\,\mathrm{abs}}_{A}(m)$, the difference from the absolute-feature model that has seen the module. That reference itself flags too many students in some modules, so our main criterion for alert volume is the distance $|\bar{f}(m)-\bar{y}(m)|$ between the share flagged and the observed at-risk rate, which needs no reference model.
+
+\subsection{Calibration and threshold}
+For each module and both protocols, we report the Brier score, the mean predicted risk, calibration-in-the-large (the intercept of a logistic regression of $y$ with $\mathrm{logit}(\hat{p})$ as an offset), the calibration slope and reliability diagrams. Because of the balanced weights, the probabilities are not calibrated even in \cA. What we measure is therefore the \emph{degradation} of calibration under transfer, that is, the difference \cB{} $-$ \cA{} on the same students; we do not claim that the local model is calibrated. We also compute the drift for thresholds from 0.3 to 0.7.
+
+\subsection{Remedies}
+We compare several ways of flagging the students of a held-out module. The first is the raw transferred model. The second is \emph{Platt recalibration} \cite{platt1999probabilistic} of that model on labelled students from the target module, and the third its cheaper variant from clinical prediction, the \emph{intercept-only update} \cite{janssen2008updating}; both are fitted with balanced weights. The \emph{top-$q$} rule flags, in each cohort, the share $q$ of students with the highest scores, where $q$ is either the at-risk rate of the training modules or, without labels, the prevalence that the EM procedure of Saerens et~al.\ \cite{saerens2002priors} estimates in each cohort. The last option is the \emph{relative} model. All rules are evaluated on the same students, under two scenarios. In the first, $k=100$ students drawn at random serve as the labelled sample (50 draws), and every rule is evaluated on the remaining students. In the second, the first presentation of each module serves as a labelled pilot cohort, and every rule is evaluated on the later presentations. A top-$q$ rule that uses the true at-risk rate of the module provides a bound that no real deployment could reach.
+
+\subsection{Uncertainty}
+We compute 95\% confidence intervals with a cluster bootstrap over students (1{,}000 resamples) \cite{efron1993bootstrap}. Resampling students rather than enrolments respects the dependence between the enrolments of a student in several modules, and the same resamples are used for every configuration, so the intervals are paired. They describe the sampling of students, not of modules. At the module level, we therefore report how many modules improve, together with a paired Wilcoxon test ($n=7$), and we rerun both protocols with \resNSeeds{} different seeds.
+
+\subsection{Interpretability}
+SHAP values \cite{lundberg2017shap} are computed with the path-dependent version of TreeSHAP \cite{lundberg2020treeshap}, in which the expected value and the conditional expectations are taken over the training data that reached each node of the trees. The attributions of a transferred model are therefore relative to its training modules. We explain two models: the transferred LOMO model and a \emph{local} model trained on the module alone (two-fold cross-fitting, grouped by student). The attributions of one-hot columns are summed back to their original variable, and 400 students are explained per module. Exact TreeSHAP is slow on unpruned forests. Since the SHAP value of a forest is the mean of the SHAP values of its trees, we estimate it without bias from 100 randomly drawn trees, which reproduces the exact importance ranking with Spearman $\rho=0.985$. We measure the \emph{agreement} between transferred and local models as the Spearman correlation between their global importances (mean $|\phi|$). The \emph{drift decomposition} averages the signed attributions of the transferred model over the students of $m$ and over feature families $G$,
+\begin{equation}
+\bar{\phi}_{m,G} = \frac{1}{|S_m|}\sum_{i\in S_m}\sum_{j\in G}\phi_{ij}.
+\label{eq:decomp}
+\end{equation}
+Summed over families, these terms equal the mean difference between the predicted risk of $m$'s students and the model's average prediction on its training modules.
+
+\subsection{Fairness}
+We compare true-positive rate (TPR), false-positive rate (FPR), precision (PPV) and flag rate between women and men, between the most and least deprived IMD quintiles (Q1: 0--20\%; Q5: 80--100\%), and between students with and without a declared disability. The comparisons are made over all modules and within each module, with group sizes and cluster-bootstrap intervals. To examine composition effects more formally, we regress the flag of students who are not at risk on gender, with and without module fixed effects (linear probability model). These are descriptive associations; they do not identify what causes a disparity.
+
+\subsection{Implementation and reproducibility}
+All analyses were run in Python 3.12 with scikit-learn 1.9.1, pandas 3.0.6, shap 0.54.1 and PyTorch 2.14.1, with fixed seeds. One script regenerates every figure, table and number in the article and its supplementary material from the raw OULAD files. An automated test suite checks that there is no temporal leakage and that no student appears on both sides of either protocol.
+
+%=====================================================================
+\section{Results}
+\label{sec:results}
+
+\input{../generated/tab_audit}
+
+\subsection{Methodological audit}
+\label{sec:audit}
+We started from a pipeline that keeps all enrolments and compares a pooled AUC in \cA{} with a per-module mean in \cB. At 25\% of the course, it gives an AUC of \resRefA{} in \cA{} and \resRefB{} in \cB, a transfer gap of \resRefGap{} (\cref{tab:audit}; gaps are computed before rounding). Filtering early scores by their submission date makes little difference. Restricting the population to students still enrolled at the cut-off has by far the largest effect. At 25\% of the course, \resPctGone\% of enrolments have already ended. They include \resPctWithdrawnGone\% of all Withdrawn outcomes, among them \resNGoneBeforeStart{} unregistrations before the course had even started. Their last active day makes these students trivial to predict, and their share varies from \resGoneMin\% (\resGoneMinMod) to \resGoneMax\% (\resGoneMaxMod), which distorts comparisons between modules. Using the same aggregation in both protocols then halves the gap again, from \resPooledGap{} to \resSameAggGap. Taken together, these choices make the apparent gap more than twice as large as its corrected value. They also explain why our AUCs at 25\% of the course, around 0.80, are lower than the values above 0.90 often reported on OULAD, which are usually obtained with features covering the whole course or with students who have already left.
+
+\subsection{How early can we predict?}
+\cref{fig:early} plots performance against the length of the observation window. With relative features, the AUC increases from \resAucRelATen{} at 10\% of the course to \resAucRelAFifty{} at 50\% in \cA, and from \resAucRelBTen{} to \resAucRelBFifty{} in \cB. The gap between the protocols stays between \resGapRelMin{} and \resGapRelMax{} at every cut-off (\resGapAbsMin--\resGapAbsMax{} with absolute features). With absolute features, the transferred model flags too many students. At 25\%, its recall is higher than in \cA{} (\resRecAbsBTwentyFive{} versus \resRecAbsATwentyFive) but its precision is lower (\resPrecAbsBTwentyFive{} versus \resPrecAbsATwentyFive). A study reporting recall alone, as is often done, would conclude that the transferred model is better than the local one.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{early_curve}
+\caption{Performance as a function of the observed share of the presentation (students still enrolled at the cut-off). Solid lines show relative features and dashed lines absolute features. Both protocols are averaged over modules in the same way. The band gives the range across held-out modules in \cB{} with relative features.}
+\label{fig:early}
+\end{figure*}
+
+\input{../generated/tab_modules}
+
+\subsection{Ranking transfers, alert volume does not}
+\label{sec:transfer}
+\cref{tab:transfer} and \cref{fig:transfer} break down the three quantities per module at the 25\% cut-off. The cost in ranking is small: \resCostAbs{} \resCICostAbs{} on average with absolute features, and less than 0.015 in \resNCostSmall{} of the seven modules. A naive reading of LOMO results would describe modules AAA and GGG as poorly transferable. They are in fact \emph{difficult} modules. Their AUC is already low when the model has seen them (\resAAAAucA{} and \resGGGAucA{}), and it drops by only \resAAACost{} and \resGGGCost{} when the model has not. BBB is the exception. Its cost of \resBBBCost{} persists within its presentations (\resBBBIntraCost) and falls to \resBBBCostRel{} with relative features, which suggests that in BBB the ranking, too, depends on scale.
+
+Alert volume behaves quite differently. In GGG, the transferred model flags \resGGGFlagB\% of students, compared with \resGGGFlagA\% for the model that has seen the module and an observed risk of \resGGGRisk\%. Recall rises from \resGGGRecA{} to \resGGGRecB{}, and precision falls from \resGGGPrecA{} to \resGGGPrecB. BBB also drifts upwards (\resBBBDrift), while CCC and DDD drift slightly downwards. The mean absolute drift $|\dsame|$ is \resDriftAbs{} \resCIDriftAbs. In practice, an institution that deployed this model in a course like GGG would end up contacting almost every student.
+
+\input{../generated/tab_transfer}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{transfer}
+\caption{Ranking and alert volume per module at the 25\% cut-off. (a) AUC when the module is seen \cA{} or unseen \cB, and in \cB{} with relative features. (b) Share of students flagged in \cA{} and \cB, compared with the observed at-risk rate. (c) Remedies applied to the same students, measured against the common reference ($\dref$): the raw transferred model, Platt recalibration on 100 labelled students (mean and standard deviation over 50 draws) and relative features.}
+\label{fig:transfer}
+\end{figure*}
+
+\subsection{Not a threshold choice, a calibration problem}
+\label{sec:calibration}
+One might suspect that the drift simply reflects the choice of threshold. It does not. With absolute features, the mean drift stays between \resThrDriftAbsMin{} and \resThrDriftAbsMax{} for every threshold from 0.3 to 0.7, and the mean predicted risk, which involves no threshold at all, shifts by \resScoreShiftAbs{} on average and by \resScoreShiftGGGAbs{} in GGG. Calibration worsens accordingly (\cref{tab:calibration}). Moving to an unseen module changes the Brier score by \resCalBrierAbs{} on average (\resCalBrierGGGAbs{} in GGG), calibration-in-the-large by \resCalCitlAbs{} (\resCalCitlGGGAbs{} in GGG), and the calibration slope of GGG by \resCalSlopeGGGAbs. The reliability diagrams in \cref{fig:reliability} make the problem visible. Over all modules, the three models are close to one another. In GGG, however, the transferred absolute model predicts risks well above those observed, whereas the relative model stays close to the local one. With relative features, the average changes shrink to \resCalBrierRel{}, \resCalCitlRel{} and \resCalSlopeRel{}.
+
+Nor are the balanced weights to blame. An unweighted forest calibrated by isotonic regression drifts just as much on unseen modules ($|\dsame|$ = \resModCalDriftAbs, with a mean predicted risk \resModCalPGapAbs{} away from the observed rate), and a logistic regression drifts as well, though less (\resModLogitDriftAbs; \cref{tab:models}).
+
+\input{../generated/tab_calibration}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{reliability}
+\caption{Reliability diagrams at the 25\% cut-off, showing the observed at-risk share for each class of predicted probability (classes with fewer than 30 students are omitted). Because of the balanced class weights, the curves need not follow the diagonal even in \cA; the effect of transfer is the gap between the \cB{} and \cA{} curves.}
+\label{fig:reliability}
+\end{figure*}
+
+\subsection{What makes GGG different}
+\label{sec:mechanism}
+\cref{tab:modules} shows how GGG stands apart. Its first non-exam assessment comes at about a quarter of the presentation, against 7--13\% in the other modules; its assignments are formative, since the exam carries the whole weight; and only half of its students have an early score at the cut-off. GGG students also use the VLE much less. Their median number of clicks before the cut-off is \resGGGMedClicks{}, against \resOthersMedClicks{} in the other modules, where it would correspond to the \resGGGClickPctile{}th percentile. In the other modules, students with at most \resGGGMedClicks{} clicks are at risk in \resRiskLowClicksOthers\% of cases, against \resRiskLowClicksGGG\% in GGG. Likewise, a student without an early score is at risk in \resRiskNoScoreOthers\% of cases elsewhere, but in only \resRiskNoScoreGGG\% of cases in GGG, where \resGGGNoScore\% of students have no score yet. The drift does not end with the first deadline: it reaches \resGGGDriftThirtyThree{} at 33\% and \resGGGDriftFifty{} at 50\% of the course.
+
+What the model has learned are absolute thresholds, such as ``few clicks'' or ``no score yet'' signalling risk, and the meaning of these thresholds depends on how a course is designed. Across modules and presentations, the drift tends to be larger where at-risk students fail rather than withdraw (Spearman $\rho$~=~\resRhoWithdrawnDrift{} with the share of withdrawals among at-risk students, over presentations), where students are older and less qualified, and where the VLE is used less. With seven modules, these associations are only exploratory (Table~S5 of the supplementary material).
+
+\subsection{Interpretability: the same features on different scales}
+\label{sec:shap}
+If transfer failed because different features matter in different modules, the global importances of the transferred and local models would differ. For the most part, they do not. Local models rank the 18 variables in a similar order across modules (mean pairwise Spearman \resStabAbs), with the mean early score at the top in every module. The agreement between transferred and local importances is moderate with absolute features (\resConcAbs) and higher with relative features (\resConcRel), and it improves in \resNConcImproved{} of the seven modules (\cref{fig:shap}a). GGG is a telling case. Although it is the module that drifts most, it shows one of the \emph{highest} agreements with absolute features (\resConcGGGAbs). What goes wrong in GGG is not the choice of features but the way they are read.
+
+The drift decomposition of \cref{eq:decomp} shows this directly (\cref{fig:shap}b). For GGG's students, the transferred absolute model raises the predicted risk by \resGGGShapTotal{} above its training average. Early-score features account for \resGGGShapScores{} and engagement features for \resGGGShapEngage, while demographics contribute \resGGGShapDemo. Across modules, this total follows the flag-rate drift ($\rho$~=~\resRhoShapDrift). With relative features, the shift largely disappears (\resGGGShapTotalRel{} for GGG; \cref{fig:shap}c). Because global importance ignores the sign of attributions, it cannot reveal a calibration problem, whereas signed attributions computed on the target population can.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{shap}
+\caption{Feature importance and signed attributions at the 25\% cut-off. (a) Spearman correlation between the SHAP importances of the transferred model and those of a model trained on the module itself. (b, c) Mean signed SHAP attribution of the transferred model for the students of each module, by feature family, that is, the shift of their predicted risk relative to the training population.}
+\label{fig:shap}
+\end{figure*}
+
+\subsection{Remedies compared on the same students}
+\label{sec:remedies}
+\cref{tab:remedies} compares the remedies on the same students. The label-free prevalence correction does not work. For GGG, the prevalence estimated by the EM procedure leads to flagging \resEmGGGFlag\% of students, and on average the resulting rule ends up further from the observed risk than the raw model ($|$flagged $-$ risk$|$ = \resEmGapRisk{} against \resGapRiskRaw). This is consistent with our diagnosis. If only the prevalence had changed, the balanced decision rule of our model would need no correction at all. The drift comes instead from a change in how the features relate to risk, and this change inflates the posterior probabilities on which prevalence estimation depends.
+
+With 100 labelled students, Platt recalibration and the intercept-only update both bring the alert volume close to the observed risk (\resGapRiskRecal{} and \resIcptGapRisk). They barely change precision, however (\resPrecRecalK{} and \resIcptPrec, against \resPrecRawK), and their results vary from one sample of 100 students to the next. The standard deviation of the share flagged is \resPlattSdFlag{} for Platt and \resIcptSdFlag{} for the intercept-only update, which is thus no more stable. Flagging a fixed share of each cohort reaches a distance of \resGapRiskTopQ. The relative model, which uses no labels, comes as close to the observed risk as the two recalibrations (\resGapRiskRel, the same as the model that has seen the module, \resGapRiskRefA), with the highest precision (\resPrecRelK) and F1 score (\resFoneRelK). When a labelled pilot cohort replaces the randomly drawn students, recalibration does worse (precision \resPrecRecalPilot), because the presentations of a module also differ from one another; on the same later presentations, the relative model keeps its advantage (\resPrecRelPilot). Measured against the common reference, the relative model flags too few students in GGG ($\dref$ = \resGGGDriftRelCommon). That reference, however, flags too many in GGG, and what matters for alert volume is the distance to the observed risk.
+
+\input{../generated/tab_remedies}
+
+\subsection{Choice of normalization and of learner}
+\label{sec:normalisation}
+Percentile ranks are not the only way to normalize within the cohort (\cref{tab:normalisation}). On unseen modules, a winsorized z-score reaches an AUC of \resNormZscoreAucB{} and a robust standardization \resNormRobustAucB{}, compared with \resNormRankAucB{} for ranks and \resAucAbsBTwentyFive{} for absolute values. Over three cut-offs, the mean AUCs of the three normalizations differ by at most \resNormMaxSpread{}. Normalizing within the cohort is what matters most. Ranks are the best option or tied for best, and they have the practical advantages of having no parameter and of being insensitive to sentinel values. They do need a cohort of reasonable size. When ranks are computed within random sub-cohorts of the target module, the AUC on unseen modules is \resCohortAucTen{} \resCohortAucTenCI{} with 10 students and \resCohortAucFifty{} \resCohortAucFiftyCI{} with 50, against \resCohortAucFull{} with the whole presentation (Table~S2). From about 50 students onwards, ranks are as reliable as with the whole cohort.
+
+The effect does not depend on the learning algorithm (\cref{tab:models}). Ranks raise the AUC on unseen modules and reduce the drift for the logistic regression (AUC from \resModLogitAucBAbs{} to \resModLogitAucBRank, drift from \resModLogitDriftAbs{} to \resModLogitDriftRank) and for the calibrated unweighted forest (from \resModCalAucBAbs{} to \resModCalAucBRank, and from \resModCalDriftAbs{} to \resModCalDriftRank). They do the same for gradient boosting and for a recurrent network on weekly activity sequences (Table~S6). The calibrated forest calls for one caveat. At a threshold of 0.5, a calibrated model flags only the students who are more likely at risk than not, so the share it flags need not match the at-risk rate, and the distance between the two (\resModCalGapRank) is not the right criterion for this model. The relevant measure is the distance between mean predicted risk and observed risk, which ranks reduce from \resModCalPGapAbs{} to \resModCalPGapRank. Average precision leads to the same conclusions (from \resApBAbs{} to \resApBRel{} for the forest; Table~S3).
+
+\input{../generated/tab_normalisation}
+\input{../generated/tab_models}
+
+\subsection{Uncertainty, heterogeneity and robustness}
+\label{sec:uncertainty}
+\label{sec:robust}
+For the students of these modules, the differences between relative and absolute features are estimated precisely: \resCIDiffAucB{} \resCIDiffAucBCI{} in AUC on unseen modules, \resCIDiffCost{} \resCIDiffCostCI{} in ranking cost and \resCIDiffDrift{} \resCIDiffDriftCI{} in mean absolute drift. At the module level, the picture is less uniform. The drift decreases in \resNImprovedDrift{} of the seven modules (Wilcoxon $p$~=~\resWilcoxonDrift). The AUC improves in \resNImprovedAuc{} ($p$~=~\resWilcoxonAuc), so the gain in ranking is not established at the module level. The gain is large for AAA (\resRelMinusAbsAAA) and BBB (\resRelMinusAbsBBB), whereas CCC loses \resRelMinusAbsCCC{} and EEE \resRelMinusAbsEEE{} (means over \resNSeeds{} seeds; the standard deviation across seeds is at most \resSeedSdAucMax{} per module). CCC is the module whose absolute scales already transfer best (its drift is \resCCCDriftAbs). Its loss persists within each presentation (\resCCCIntraDiff), so differences between presentations do not explain it. Our reading is that ranks discard part of the resolution of the absolute values, which was useful in CCC, where there was nothing to correct.
+
+The conclusions hold when the training sets have the same size (the transfer cost is then \resSizeCostAbs{} with absolute and \resSizeCostRel{} with relative features), when the students shared with the held-out module are kept in training (mean change in AUC of at most \resOverlapMeanDiffMax), and when the threshold, the learner or the target definition is changed. The supplementary material reports these checks in detail.
+
+\subsection{Fairness}
+\label{sec:fairness}
+\cref{tab:fairness} and \cref{fig:fairness} report the gaps in error rates between groups. With absolute features, transfer creates a gender gap that is absent when the modules are seen: the FPR gap between women and men goes from \resFprGenderAbsA{} \resFprGenderAbsACI{} in \cA{} to \resFprGenderAbsB{} \resFprGenderAbsBCI{} in \cB. Within modules, however, the transferred model's FPR is never significantly higher for women, and it is significantly lower for them in \resNGenderWithinNeg{} of the seven modules (\cref{fig:fairness}c). A regression with module fixed effects confirms that this is a composition effect, as the gender coefficient goes from \resFeGlobalAbsB{} without fixed effects to \resFeFixedAbsB{} \resFeFixedAbsBCI{} with them. Women make up \resShareFemaleBBB\% of BBB and \resShareFemaleGGG\% of GGG, the two modules whose alert volume drifts upwards, so pooling the modules attributes their drift to gender \cite{simpson1951}. With relative features, the pooled gap shrinks markedly, to \resFprGenderRelB{} \resFprGenderRelBCI. It is reduced, but not eliminated.
+
+Gaps by IMD and disability behave differently. They appear under every protocol and reflect different base rates (\resRiskQOne\% at risk in Q1 against \resRiskQFive\% in Q5). Unlike the gender gap, they are also present within courses: the FPR of Q1 is significantly higher in \resNImdWithinPos{} of the seven modules. Relative features reduce the pooled FPR gap by \resFprImdRelChange{} \resFprImdRelChangeCI{} without closing it, which is consistent with the impossibility of equalizing both error rates and calibration when base rates differ \cite{chouldechova2017fair,kleinberg2017tradeoffs}. The intersections point the same way. With absolute features, disadvantages accumulate (FPR \resInterFQOneAbs{} for women in Q1 against \resInterMQFiveAbs{} for men in Q5), whereas with relative features the remaining gaps follow deprivation rather than gender (Table~S4).
+
+\input{../generated/tab_fairness}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fairness}
+\caption{Gaps in error rates between groups (25\% cut-off, 95\% cluster-bootstrap intervals). (a) Recall gaps and (b) false-positive rate gaps. (c) Female--male FPR gap of the transferred model within each module and over all modules, with absolute and relative features; the pooled gap of the absolute model is a composition effect.}
+\label{fig:fairness}
+\end{figure*}
+
+%=====================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What transfers and what does not}
+Across modules, students are ordered by risk in much the same way: early scores, recent activity and submissions are associated with risk everywhere. What differs from one course to another is the scale on which these signals are expressed, for example how many clicks a typical week requires, when the first assessment is due, or whether early assignments are graded. A model that has learned absolute thresholds carries the scale of its training courses into the new course, and its probabilities degrade as a result. This closely parallels clinical prediction, where discrimination is known to travel better than calibration \cite{janssen2008updating,vancalster2019calibration}. The failure of prevalence correction makes the diagnosis more precise. The at-risk rate does vary between modules (\cref{tab:modules}), but this variation is not the main source of the drift; what changes most is what a given level of activity means.
+
+The three levels of claims set out in the introduction should be kept apart. The benefits of cohort normalization are established for the students of seven modules, with intervals that exclude zero, but they are not uniform across modules. The drift is reduced in \resNImprovedDrift{} modules out of seven, the gain in ranking is not established at the module level, and CCC is slightly worse off. The interpretation that normalization reduces sensitivity to course design rests on the mechanism we describe, on the SHAP decomposition and on the consistency of the results across learners. Transfer across institutions is not tested here.
+
+\subsection{Implications for deployment in a new context}
+For an institution that wants to use a model in a course without labelled history, our results suggest four practical steps. The first is to normalize engagement and early-assessment features within the cohort at the date of prediction. This requires no outcome data, but it does require a cohort of at least about 50 students, so smaller groups should be pooled across sections or sessions of the same course. The second is to compare the alert volume with what the first weeks lead one to expect. A flag rate far from the expected risk is a reason to investigate, even though, without labels, it cannot distinguish a miscalibrated model from a cohort that really is more at risk. The third is to recalibrate as soon as a first cohort has been labelled, bearing in mind that recalibration on about a hundred students varies from one sample to another. The fourth is to decide how alerts will be used before deploying them. Gaps linked to deprivation and disability persist within courses and cannot all be removed when base rates differ. Alerts should therefore lead to an offer of support reviewed by a person rather than to an automatic decision, and their distribution across groups should be monitored.
+
+Reducing a disparity does not by itself make decisions fair. Cohort normalization removes the gender gap that pooling courses creates, but it also changes who is flagged within a course, and it hides any disengagement shared by the whole cohort. A practical design could therefore combine two levels: a cohort-relative model to identify students who are disengaging compared with their peers, and an absolute indicator at the cohort level to detect a decline of the whole group. Such a decline would call for a pedagogical response rather than for contacting students one by one.
+
+\subsection{Implications for evaluation practice}
+Several lessons apply beyond OULAD. Early-prediction studies should restrict the population to students still enrolled at the prediction date and check for leakage with an invariance test. When courses are held out, students enrolled in the held-out course should be removed from training. Protocols should be compared with the same aggregation. Alert rates and calibration should be reported together with discrimination, since recall alone rewards models that flag too many students. Finally, fairness audits that pool several contexts should be complemented by audits within each context. Without them, a calibration problem can look like discrimination, and, conversely, a genuine bias within a context can be masked by composition.
+
+\subsection{Limitations}
+This study has several limitations. It relies on a single institution and seven modules, so module-level tests have little power, associations at the presentation level are not independent, and our bootstrap intervals reflect the sampling of students rather than of courses. Our main model uses balanced weights and a fixed threshold. We checked thresholds from 0.3 to 0.7, a calibrated unweighted forest, a logistic regression, gradient boosting and a small recurrent network, but richer sequence models might extract more temporal information. SHAP values are estimated on a subsample of trees and students. Cohort normalization is transductive, needs cohorts of about 50 students and cannot detect a cohort that disengages as a whole. Gaps by IMD and disability remain within courses. Finally, we study transfer between modules of a single university; transfer between institutions and countries remains to be tested.
+
+\subsection{Future work}
+Our next step is to apply the same protocol to Moodle data from a fully online university in Senegal, where the held-out context will first be a degree programme and then a country. We also plan to test the two-level design that combines cohort-relative and absolute cohort-level indicators.
+
+%=====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+When the evaluation is strict (early in the course, restricted to students still enrolled, with no student on both sides of the split and with comparable aggregation), moving an at-risk model to an unseen course costs little in ranking but a great deal in alert volume and calibration. Calibration degrades mainly because engagement and early scores are read on absolute scales that depend on course design. The features that matter are the same in every course, and a change in prevalence is not the main cause. Normalizing these features within the cohort corrects the alert volume without labels, provided the cohorts are large enough, and it greatly reduces a gender disparity created by pooling courses. Early-warning systems intended for use in new courses should be evaluated on contexts they have not seen, should report alert rates and calibration alongside discrimination, and should be audited for fairness within each context.
+
+\section*{Ethics Statement}
+This study is a secondary analysis of OULAD, a public dataset released under a CC-BY 4.0 licence, in which students are anonymized by the data provider \cite{kuzilek2017oulad}. No new data were collected, no attempt was made to re-identify students, and no intervention was carried out; under these conditions, no ethical approval was required. No data from the authors' institutions were used in this study.
+
+\section*{Author Contributions}
+D.~Coly: conceptualization, methodology, software, formal analysis, investigation, data curation, validation, visualization, writing---original draft, writing---review and editing. E.~H.~B.~Tour\'e: conceptualization, methodology, supervision, writing---review and editing. E.~H.~M.~Nguer: conceptualization, methodology, supervision, writing---review and editing.
+
+\section*{Funding}
+This research received no specific grant from any funding agency in the public, commercial or not-for-profit sectors.
+
+\section*{Conflicts of Interest}
+The authors declare no conflict of interest.
+
+\section*{Data and Code Availability}
+OULAD is available under a CC-BY 4.0 licence from the Open University (\url{https://analyse.kmi.open.ac.uk/open_dataset}). The code that reproduces every figure, table and number of this article and of its supplementary material, together with its tests, is available at \url{https://github.com/duducolydev/analyses_oualad} and archived on Zenodo (\url{https://doi.org/10.5281/zenodo.24023694}).
+
+\bibliographystyle{IEEEtran}
+\bibliography{../references}
+
+\end{document}

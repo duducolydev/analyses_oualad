@@ -21,17 +21,25 @@
 \renewcommand{\thesection}{S\arabic{section}}
 \renewcommand{\cite}[1]{}
 
+% Double-blind review: \anonymoustrue hides the authors (same switch as main.tex)
+\newif\ifanonymous
+\anonymoustrue
+
 \title{Supplementary Material\\[4pt]\large The Ranking Transfers, the Threshold Does Not: Early At-Risk Prediction in Unseen Courses}
+\ifanonymous
+\author{Anonymous authors}
+\else
 \author{Doudou Coly, El Hadji Bassirou Tour\'e and El Hadji Mamadou Nguer}
+\fi
 \date{}
 
 \begin{document}
 \maketitle
 
-The numbers in this document are produced by the same script as those of the article (\nolinkurl{src/08_paper_assets.py}), from the outputs available in the public repository. Unless stated otherwise, the cut-off is at 25\% of the presentation, only students still enrolled at the cut-off are included, protocol \cB{} is the strict leave-one-module-out, and means are taken over the seven modules.
+The numbers in this document are produced by the same script as those of the article (\nolinkurl{src/08_paper_assets.py}), from the outputs of the code repository. Unless stated otherwise, the cut-off is at 25\% of the presentation, only students still enrolled at the cut-off are included, protocol \cB{} is the strict leave-one-module-out, and means are taken over the seven modules.
 
 \section{Remedies per module}
-Table~\ref{tab:s-remedies} gives, module by module, the comparison summarized in Table~V of the article, in the scenario where a random sample of $k=100$ labelled students is available.
+Table~\ref{tab:s-remedies} gives, module by module, the comparison summarized in Table~4 of the article, in the scenario where a random sample of $k=100$ labelled students is available.
 
 \input{generated/tab_s_remedies}
 
@@ -80,5 +88,15 @@ Once the population is restricted to students still enrolled at the cut-off, the
 \paragraph{Standard versus strict hold-out.} If the students who are also enrolled in the held-out module are kept in the training modules, the mean AUC on unseen modules changes by at most \resOverlapMeanDiffMax. In the modules that share many students, removing the shared students changes the AUC of CCC by \resOverlapEffectCCC{} and that of EEE by \resOverlapEffectEEE, whereas removing the same number of randomly chosen enrolments changes it by \resOverlapRandomCCC{} and \resOverlapRandomEEE{} respectively.
 
 \paragraph{Training size.} The training set of \cB{} is \resSizeRatioMin{} to \resSizeRatioMax{} times the size of that of \cA. When the model that has seen the module is trained on exactly as many students as in \cB, the transfer cost is \resSizeCostAbs{} with absolute features and \resSizeCostRel{} with relative features, in line with the main analysis.
+
+\section{Calibration}
+Table~\ref{tab:calibration} gives the calibration measures summarized in the article. They compare the transferred model with the model that has seen the module, on the same students, so they measure how much calibration degrades under transfer.
+
+\input{generated/tab_calibration}
+
+\section{Choice of normalization}
+Table~\ref{tab:normalisation} compares percentile ranks with a winsorized z-score and a robust standardization. All three normalize within the cohort, and they give similar results.
+
+\input{generated/tab_normalisation}
 
 \end{document}

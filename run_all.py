@@ -114,8 +114,9 @@ def main():
             print("\n=== Compilation de l'article", flush=True)
             try:
                 # Délai : MiKTeX peut attendre en silence l'installation d'un paquet manquant.
-                for doc in ["main.tex", "supplementary.tex"]:
-                    r = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", doc],
+                # main.tex : version JLA (biber) ; ieee/main.tex : version IEEE conservée.
+                for doc in ["main.tex", "supplementary.tex", "ieee/main.tex"]:
+                    r = subprocess.run(["latexmk", "-pdf", "-cd", "-interaction=nonstopmode", "-halt-on-error", doc],
                                        cwd=RACINE / "paper", stdout=subprocess.DEVNULL, timeout=600)
                     if r.returncode != 0:
                         break
